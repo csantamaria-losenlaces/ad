@@ -1,7 +1,10 @@
+/* Nombre: Carlos Santamaría Gracia
+ * Curso: 2º D.A.M. Vespertino
+ * Entrega proyecto 1ª evaluación de Acceso a Datos */
+
 import java.io.Serializable;
 
-// Clase que implementa la interfaz Serializable que convierte objetos de Java a
-// binario y luego los puede recuperar nuevamente como objetos.
+// Clase que implementa la interfaz Serializable que convierte objetos de Java a binario y luego los puede recuperar nuevamente como objetos.
 public class Persona implements Serializable {
 
 	private static final long serialVersionUID = 284796237982514963L; // Variable autogenerada requerida tras la implementación de Serializable

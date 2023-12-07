@@ -1,8 +1,6 @@
-/* Realiza un programa Java que utilice el método listFiles() para mostrar la lista de ficheros en
- * un directorio cualquiera, o en el directorio actual.
- * Realiza un programa Java que muestre los ficheros de un directorio. El nombre del directorio
- * se pasará al programa desde los argumentos de main(). Si el directorio no existe se debe mostrar
- * un mensaje indicándolo. */
+/* Nombre: Carlos Santamaría Gracia
+ * Curso: 2º D.A.M. Vespertino
+ * Entrega proyecto 1ª evaluación de Acceso a Datos */
 
 import java.io.File;
 

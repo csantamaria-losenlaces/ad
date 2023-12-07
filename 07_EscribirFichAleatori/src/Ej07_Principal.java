@@ -1,3 +1,7 @@
+/* Nombre: Carlos Santamaría Gracia
+ * Curso: 2º D.A.M. Vespertino
+ * Entrega proyecto 1ª evaluación de Acceso a Datos */
+
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -19,7 +23,7 @@ public class Ej07_Principal {
 		for (int i = 0; i < apellido.length; i++) {
 			ficheroAleatorio.writeInt(i+1); // Escribe el número de iteración + 1 como identificador del empleado
 			sbApellido = new StringBuffer(apellido[i]); // Crea un StringBuffer con el apellido del array en la posición "i" como argumento
-			sbApellido.setLength(10); // Hace que la longitud del StringBuffer sea de 10 caracteres
+			sbApellido.setLength(10); // Hace que la longitud del StringBuffer sea de 10 caracteres fijos
 			ficheroAleatorio.writeChars(sbApellido.toString()); // Convierte a String el StringBuffer y lo escribe como "char" en el archivo
 			ficheroAleatorio.writeInt(numDepartamento[i]); // Escribe el departamento en la posición "i" del array "numDepartamento"
 			ficheroAleatorio.writeDouble(salario[i]); // Escribe el salario en la posición "i" del array "salario"

@@ -1,6 +1,6 @@
-/* Crea un fichero de texto con algún editor de textos y después realiza un programa Java que
- * visualice su contenido. Cambia el programa Java para que el nombre del fichero se acepte al
- * ejecutar el programa desde la línea de comandos. */
+/* Nombre: Carlos Santamaría Gracia
+ * Curso: 2º D.A.M. Vespertino
+ * Entrega proyecto 1ª evaluación de Acceso a Datos */
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;

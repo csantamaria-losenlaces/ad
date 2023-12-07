@@ -1,3 +1,7 @@
+/* Nombre: Carlos Santamaría Gracia
+ * Curso: 2º D.A.M. Vespertino
+ * Entrega proyecto 1ª evaluación de Acceso a Datos */
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
