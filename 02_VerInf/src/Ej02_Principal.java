@@ -6,7 +6,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-public class VerInf {
+public class Ej02_Principal {
 
 	// Declaración de variables globales
 	private static FileReader fichero;

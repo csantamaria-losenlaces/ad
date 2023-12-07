@@ -6,7 +6,7 @@
 
 import java.io.File;
 
-public class VerDir {
+public class Ej01_Principal {
 
 	// Declaración de variables globales
 	private static File dir;
