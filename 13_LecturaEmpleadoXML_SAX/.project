@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
+<<<<<<<< HEAD:13_LecturaEmpleadoXML_SAX/.project
 	<name>13_LecturaEmpleadoXML_SAX</name>
+========
+	<name>12_LecturaEmpleadoXML_DOM</name>
+>>>>>>>> 083d6fadbe2c2efd30c5641c950fffc0dfde892b:12_LecturaEmpleadoXML/.project
 	<comment></comment>
 	<projects>
 	</projects>
