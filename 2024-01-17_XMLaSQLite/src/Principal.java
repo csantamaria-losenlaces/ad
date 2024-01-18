@@ -1,4 +1,8 @@
 import java.io.File;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.Statement;
+
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.Document;
@@ -15,14 +19,20 @@ public class Principal {
 		try {
 			DocumentBuilder db = dbf.newDocumentBuilder(); // Creación del analizador de documentos XML
 			Document d = db.parse(new File("Pedidos.xml")); // Parseo del archivo XML y creación del documento XML
-
+			
 			d.getDocumentElement().normalize(); // Normalización de la estructura del documento
-
-			System.out.printf("Elemento raíz: \"%s\"\n", d.getDocumentElement().getNodeName());
-
+			
 			NodeList pedidos = d.getElementsByTagName("pedido"); // Obtención de la lista de nodos "pedido" en el documento XML
-
-			System.out.println("Nodos \"pedido\" a recorrer: " + pedidos.getLength() + "\n");
+			
+			Class.forName("org.sqlite.JDBC");
+			Connection conn = DriverManager.getConnection("jdbc:sqlite:C:/Users/Carlos/Documents/Programas/SQLite Tools v3.45.0/pedidos.db");
+			Statement stmt = conn.createStatement();
+			
+			String creaTablaPedidosClientes = "CREATE TABLE IF NOT EXISTS pedidos ("
+					+ "nombre_cliente VARCHAR2(255), numero_pedido INT(10), descripcion VARCHAR2(255), cantidad INT(9)"
+					+ ")";
+			
+			stmt.executeUpdate(creaTablaPedidosClientes);
 
 			// Bucle para recorrer la lista de nodos "pedido"
 			for (int p = 0; p < pedidos.getLength(); p++) {
@@ -33,9 +43,8 @@ public class Principal {
 				if (pedido.getNodeType() == Node.ELEMENT_NODE) {
 					Element e = (Element) pedido; // Conversión del nodo a un elemento para facilitar el trabajo con él
 
-					System.out.println("Pedido #" + (p + 1));
-					System.out.println("  Nombre: " + getNodo("nombre", e));
-					System.out.println("  Nº pedido: " + getNodo("numero_pedido", e));
+					String nombreCliente = getNodo("nombre", e);
+					String numeroPedido = getNodo("numero_pedido", e);
 
 					NodeList articulosNodos = e.getElementsByTagName("articulo"); // Obtención de la lista de nodos "articulo" específicamente del pedido actual
 
@@ -48,18 +57,18 @@ public class Principal {
 						if (articulo.getNodeType() == Node.ELEMENT_NODE) {
 							Element articuloElemento = (Element) articulo; // Conversión del nodo a un elemento para facilitar el trabajo con él
 
-							System.out.println("    Artículo #" + (a + 1));
-
 							// Obtención de atributos del nodo "articulo"
 							String descripcion = articuloElemento.getAttribute("descripcion");
 							String cantidad = articuloElemento.getAttribute("cantidad");
-
-							System.out.println("      Descripción: " + descripcion);
-							System.out.println("      Cantidad: " + cantidad + "x");
+							
+							String insertaTupla = String.format("INSERT INTO pedidos VALUES ('%s', '%s', '%s', '%s')", nombreCliente, numeroPedido, descripcion, cantidad);
+							stmt.executeUpdate(insertaTupla);
 						}
 					}
 				}
 			}
+			
+			
 
 		} catch (Exception e) {
 			e.printStackTrace();
