@@ -24,6 +24,7 @@ public class Principal {
 
     private static ArrayList<String> listaPedidos = new ArrayList<>();
     private static ArrayList<String> listaClientes = new ArrayList<>();
+    private static ArrayList<String> listaArticulos = new ArrayList<>();
     private static String opc = "";
 
     // Declaración de variables tratamiento documento XML
@@ -39,7 +40,7 @@ public class Principal {
     private static String idCliente, idPedido, fechaPedido, idArticulo, cantidadPedida;
 
     // Declaración de variables constantes
-    private static final String RUTA_XML = "Pedidos_Tiendas.xml";
+    private static final String RUTA_XML = "Pedidos_Tiendas_3.xml";
 
     public static void main(String[] args) {
 
@@ -62,9 +63,10 @@ public class Principal {
             // Crea la estructura de tablas y campos de la BB.DD., si todavía no existe
             crearTablas();
 
-            insertarClientesArticulos(); // DEBUG
+            // DEBUG, SALTA EXCEPCIÓN (CAPTURADA, POR LO QUE NO SE INTERRUMPE EJECUCIÓN) SI PK YA EXISTE
+            //insertarClientesArticulos();
 
-            leerPedidosClientesBBDD();
+            leerBBDD();
 
             // Bucle para recorrer la lista de nodos "pedido"
             for (int p = 0; p < pedidos.getLength(); p++) {
@@ -80,41 +82,53 @@ public class Principal {
                     idPedido = getNodo("numero-pedido", elementoPedido);
                     fechaPedido = getNodo("fecha", elementoPedido);
 
-                    if (!listaPedidos.contains(idPedido) || (listaPedidos.contains(idPedido) && !manejarPedidoDuplicado().equalsIgnoreCase("o"))) {
-
-                        if (listaPedidos.contains(idPedido) && opc.equalsIgnoreCase("s")) eliminarPedido(idPedido);
-
-                        insertarPedido("pedidos");
-
-                        // Obtención de la lista de nodos "articulo" específicamente del pedido actual
-                        articulos = elementoPedido.getElementsByTagName("articulo");
-
-                        // Bucle para recorrer los nodos "articulo" de un pedido
-                        for (int a = 0; a < articulos.getLength(); a++) {
-
-                            // Obtención del nodo "articulo" en la posición a
-                            Node nodoArticulo = articulos.item(a);
-
-                            // Verificación de que el nodo sea un elemento
-                            if (nodoArticulo.getNodeType() == Node.ELEMENT_NODE) {
-
-                                // Conversión del nodo a un elemento para facilitar el trabajo con él
-                                Element articuloElemento = (Element) nodoArticulo;
-
-                                // Obtención de atributos del nodo "articulo"
-                                idArticulo = getNodo("codigo", articuloElemento);
-                                cantidadPedida = getNodo("cantidad", articuloElemento);
-
-                                insertarPedido("articulos_pedidos");
-
-                            }
-                        }
+                    if (clienteExiste() && !comprobarPedidoDuplicado().equalsIgnoreCase("O")) {
+                        	
+	                	insertarPedido("pedidos");
+	                	
+	                	// Obtención de la lista de nodos "articulo" específicamente del pedido actual
+	                    articulos = elementoPedido.getElementsByTagName("articulo");
+	
+	                    // Bucle para recorrer los nodos "articulo" de un pedido
+	                    for (int a = 0; a < articulos.getLength(); a++) {
+	
+	                        // Obtención del nodo "articulo" en la posición a
+	                        Node nodoArticulo = articulos.item(a);
+	
+	                        // Verificación de que el nodo sea un elemento
+	                        if (nodoArticulo.getNodeType() == Node.ELEMENT_NODE) {
+	
+	                            // Conversión del nodo a un elemento para facilitar el trabajo con él
+	                            Element articuloElemento = (Element) nodoArticulo;
+	
+	                            // Obtención de atributos del nodo "articulo"
+	                            idArticulo = getNodo("codigo", articuloElemento);
+	                            cantidadPedida = getNodo("cantidad", articuloElemento);
+	                            
+	                            if (articuloExiste()) insertarPedido("articulos_pedidos");
+	
+	                        }
+	                        
+	                    }
+	                    
+                    } else {
+                    	
+                    	System.out.println("Pedido " + idPedido + " omitido");
+                    	
                     }
+                    
                 }
+                
+                comprobarPedidoVacio();
+                
             }
+            
         } catch (Exception e) {
+        	
             e.printStackTrace();
+            
         }
+        
     }
 
     // Método para obtener el valor de un nodo dado su nombre de etiqueta y el elemento padre
@@ -191,13 +205,17 @@ public class Principal {
                 String sentenciaTablaPedidos = String.format("INSERT INTO pedidos VALUES ('%s', '%s', '%s')",
                         idPedido, idCliente, fechaPedido);
                 stmt.executeUpdate(sentenciaTablaPedidos);
+                System.out.println("Insertado pedido en tabla \"pedidos\"");
                 break;
             case "articulos_pedidos":
                 String sentenciaTablaArticulosPedidos = String.format("INSERT INTO articulos_pedidos VALUES ('%s', '%s', '%s')",
                         idPedido, idArticulo, cantidadPedida);
                 stmt.executeUpdate(sentenciaTablaArticulosPedidos);
+                System.out.println("Insertado pedido en tabla \"articulos_pedidos\"");
                 break;
         }
+        
+        System.out.println("Inserción de datos finalizada");
 
         stmt.close();
 
@@ -210,11 +228,11 @@ public class Principal {
             conectarBBDD();
 
             String sentenciaTablaClientes = "INSERT INTO clientes VALUES "
-                    + "(1234567890, 'Juan', 'Gómez', 'Calle 123, Ciudad A', '555-1234'), "
-                    + "(1234567891, 'Maria', 'Rodríguez', 'Avenida XYZ, Ciudad B', '555-5678'), "
-                    + "(1234567892, 'Pedro', 'Fernandez', 'Plaza Principal, Ciudad C', '555-9876'), "
-                    + "(1234567893, 'Laura', 'Martínez', 'Calle Central, Ciudad A', '555-4321'), "
-                    + "(9876543210, 'Roberto', 'Gutiérrez', 'Calle Central, Ciudad A', '555-4321')";
+                    + "(1234567890, 'Juan', 'Gómez', 'Paseo del Prado, 14, Madrid', '699123456'), "
+                    + "(1234567891, 'Maria', 'Rodríguez', 'Calle Mayor, 45, Barcelona', '971234567'), "
+                    + "(1234567892, 'Pedro', 'Fernandez', 'Calle del Carmen, 3, Málaga', '677666555'), "
+                    + "(1234567893, 'Laura', 'Martínez', 'Calle de Bailén, 2, Madrid', '815551234'), "
+                    + "(9876543210, 'Roberto', 'Gutiérrez', 'Gran Vía de les Corts Catalanes, 666, Barcelona', '622111000')";
 
             String sentenciaTablaArticulos = "INSERT INTO articulos VALUES "
                     + "('12345', 'Portátil HP Envy', 'Electrónica', '2023-01-15'), "
@@ -237,28 +255,72 @@ public class Principal {
 
         } catch (SQLException sql) {
 
-            System.out.println("Ha ocurrido una excepción SQL");
+            System.out.println("Ha ocurrido un error al introducir los clientes y artículos de muestra. Es posible que ya existieran");
 
         }
     }
 
-    private static String manejarPedidoDuplicado() {
+    private static boolean clienteExiste() {
+		if (listaClientes.contains(idCliente)) {
+			System.out.println("Cliente " + idCliente + " encontrado. Continuando proceso...");
+			return true;
+		}
+		System.out.println("Cliente " + idCliente + " no existe. Omitiendo pedido...");
+		return false;
+	}
+    
+    private static String comprobarPedidoDuplicado() {
 
-        opc = "";
-
-        System.out.println("El pedido " + idPedido + " está duplicado. ¿Deseas omitirlo o sustituirlo?\n[O] Omitir\n[S] Sustituir");
-        opc = teclado.nextLine();
-
-        while (!opc.equalsIgnoreCase("O") && !opc.equalsIgnoreCase("S")) {
-            System.out.println("La opción introducida no es correcta. Por favor, elige una de las siguientes:\n[O] Omitir\n[S] Sustituir");
-            opc = teclado.nextLine();
+    	opc = "";
+    	
+    	if (listaPedidos.contains(idPedido)) {
+        	
+    		System.out.println("El pedido " + idPedido + " está duplicado. ¿Deseas omitirlo o sustituirlo?\n[O] Omitir\n[S] Sustituir");
+    		opc = teclado.nextLine();    		
+    		
+    		while (!opc.equalsIgnoreCase("O") && !opc.equalsIgnoreCase("S")) {
+    			
+                System.out.println("La opción introducida no es correcta. Por favor, elige una de las siguientes:\n[O] Omitir\n[S] Sustituir");
+                opc = teclado.nextLine();
+                
+            }
+    		
+    		if (opc.equalsIgnoreCase("S")) {
+    			
+    			try {
+					
+    				eliminarPedido(idPedido, false);
+    				
+    				System.out.println("Eliminando datos del anterior pedido...");
+    				
+				} catch (ClassNotFoundException | SQLException e) {
+					
+					System.out.println("No se ha podido eliminar el pedido " + idPedido);
+					
+				}
+    			
+    		}
+    		
+        } else {
+        	
+        	System.out.println("El pedido " + idPedido + " no está repetido. Continuando ejecución...");
+        	
         }
-
-        return opc;
-
+    	
+    	return opc;
+    	
     }
+    
+    private static boolean articuloExiste() {
+		if (listaArticulos.contains(idArticulo)) {
+			System.out.println("Artículo " + idArticulo + "encontrado. Continuando proceso...");
+			return true;
+		}
+		System.out.println("Artículo " + idArticulo + " no existe. Omitiendo artículo...");
+		return false;
+	}
 
-    private static void leerPedidosClientesBBDD() throws ClassNotFoundException, SQLException {
+    private static void leerBBDD() throws ClassNotFoundException, SQLException {
 
         conectarBBDD();
 
@@ -266,13 +328,16 @@ public class Principal {
         while (rsPedidos.next()) listaPedidos.add(rsPedidos.getString("id_pedido"));
 
         ResultSet rsClientes = stmt.executeQuery("SELECT id_cliente FROM clientes");
-        while (rsClientes.next()) listaClientes.add(rsPedidos.getString("id_cliente"));
+        while (rsClientes.next()) listaClientes.add(rsClientes.getString("id_cliente"));
+        
+        ResultSet rsArticulos = stmt.executeQuery("SELECT id_articulo FROM articulos");
+        while (rsArticulos.next()) listaArticulos.add(rsArticulos.getString("id_articulo"));
 
         stmt.close();
 
     }
 
-    private static void eliminarPedido(String idPedido) throws ClassNotFoundException, SQLException {
+    private static void eliminarPedido(String idPedido, Boolean soloTablaPedidos) throws ClassNotFoundException, SQLException {
 
         conectarBBDD();
 
@@ -282,10 +347,40 @@ public class Principal {
                 idPedido);
 
         stmt.executeUpdate(sentenciaTablaPedidos);
-        stmt.executeUpdate(sentenciaTablaArticulosPedidos);
+        if (!soloTablaPedidos) stmt.executeUpdate(sentenciaTablaArticulosPedidos);
 
         stmt.close();
 
     }
+    
+    private static void comprobarPedidoVacio() throws SQLException, ClassNotFoundException {
+		
+    	conectarBBDD();
+    	
+    	String numArticulos = "";
+    	
+    	String sentenciaArticulosPedidos = String.format("SELECT COUNT(id_articulo) FROM articulos_pedidos WHERE id_pedido = %s",
+                idPedido);
+    	
+    	ResultSet rsArticulosPedidos = stmt.executeQuery(sentenciaArticulosPedidos);
+    	
+    	if (rsArticulosPedidos.next()) {
+    		
+    		numArticulos = rsArticulosPedidos.getString(1);
+    		System.out.println("Valor de \"numArticulos\": " + numArticulos);
+    		
+    	}
+    	
+    	stmt.close();
+    	
+    	if (numArticulos.equals("0")) {
+    		
+    		System.out.println("El pedido " + idPedido + " no contiene artículos o no son válidos. Eliminando...");
+    		eliminarPedido(idPedido, true);
+    		System.out.println("El pedido " + idPedido + " ha sido eliminado por estar vacío");
+    		
+    	}
+    	
+	}
 
 }
