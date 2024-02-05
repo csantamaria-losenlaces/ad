@@ -40,7 +40,7 @@ public class Principal {
     private static String idCliente, idPedido, fechaPedido, idArticulo, cantidadPedida;
 
     // Declaración de variables constantes
-    private static final String RUTA_XML = "Pedidos_Tiendas_3.xml";
+    private static final String RUTA_XML = "Pedidos_Tiendas.xml";
 
     public static void main(String[] args) {
 
@@ -64,7 +64,7 @@ public class Principal {
             crearTablas();
 
             // DEBUG, SALTA EXCEPCIÓN (CAPTURADA, POR LO QUE NO SE INTERRUMPE EJECUCIÓN) SI PK YA EXISTE
-            //insertarClientesArticulos();
+            insertarClientesArticulos();
 
             leerBBDD();
 
@@ -255,7 +255,7 @@ public class Principal {
 
         } catch (SQLException sql) {
 
-            System.out.println("Ha ocurrido un error al introducir los clientes y artículos de muestra. Es posible que ya existieran");
+            System.out.println("Error al introducir clientes y artículos de muestra. Es posible que ya existieran");
 
         }
     }
@@ -313,7 +313,7 @@ public class Principal {
     
     private static boolean articuloExiste() {
 		if (listaArticulos.contains(idArticulo)) {
-			System.out.println("Artículo " + idArticulo + "encontrado. Continuando proceso...");
+			System.out.println("Artículo " + idArticulo + " encontrado. Continuando proceso...");
 			return true;
 		}
 		System.out.println("Artículo " + idArticulo + " no existe. Omitiendo artículo...");
@@ -367,7 +367,7 @@ public class Principal {
     	if (rsArticulosPedidos.next()) {
     		
     		numArticulos = rsArticulosPedidos.getString(1);
-    		System.out.println("Valor de \"numArticulos\": " + numArticulos);
+    		System.out.println("Artículos en el pedido: " + numArticulos);
     		
     	}
     	
