@@ -25,7 +25,6 @@ public class Principal {
     private static ArrayList<String> listaPedidos = new ArrayList<>();
     private static ArrayList<String> listaClientes = new ArrayList<>();
     private static ArrayList<String> listaArticulos = new ArrayList<>();
-    private static String opc = "";
 
     // Declaración de variables tratamiento documento XML
     private static DocumentBuilderFactory dbf;
@@ -37,7 +36,8 @@ public class Principal {
     // Declaración de variables manejo BB.DD.
     private static Statement stmt;
 
-    private static String idCliente, idPedido, fechaPedido, idArticulo, cantidadPedida;
+    private static String idCliente, idPedido, fechaPedido, idArticulo;
+    private static Integer stockArticulo, cantidadPedida;
 
     // Declaración de variables constantes
     private static final String RUTA_XML = "Pedidos_Tiendas.xml";
@@ -102,10 +102,10 @@ public class Principal {
 	                            Element articuloElemento = (Element) nodoArticulo;
 	
 	                            // Obtención de atributos del nodo "articulo"
-	                            idArticulo = getNodo("codigo", articuloElemento);
-	                            cantidadPedida = getNodo("cantidad", articuloElemento);
+	                            idArticulo = getNodo("codigo", articuloElemento).replaceFirst("^0+", "");
+	                            cantidadPedida = Integer.parseInt(getNodo("cantidad", articuloElemento));
 	                            
-	                            if (articuloExiste()) insertarPedido("articulos_pedidos");
+	                            if (articuloExiste() && hayStock()) insertarPedido("articulos_pedidos");
 	
 	                        }
 	                        
@@ -120,6 +120,7 @@ public class Principal {
                 }
                 
                 comprobarPedidoVacio();
+                System.out.println();
                 
             }
             
@@ -181,7 +182,7 @@ public class Principal {
                 + ")";
 
         final String CREA_TABLA_ARTICULOS = "CREATE TABLE IF NOT EXISTS articulos ("
-                + "id_articulo INTEGER, descripcion TEXT, familia TEXT, fecha_alta TEXT, "
+                + "id_articulo INTEGER, descripcion TEXT, familia TEXT, fecha_alta TEXT, stock INTEGER, "
                 + "PRIMARY KEY (id_articulo)"
                 + ")";
 
@@ -208,7 +209,7 @@ public class Principal {
                 System.out.println("Insertado pedido en tabla \"pedidos\"");
                 break;
             case "articulos_pedidos":
-                String sentenciaTablaArticulosPedidos = String.format("INSERT INTO articulos_pedidos VALUES ('%s', '%s', '%s')",
+                String sentenciaTablaArticulosPedidos = String.format("INSERT INTO articulos_pedidos VALUES ('%s', '%s', '%d')",
                         idPedido, idArticulo, cantidadPedida);
                 stmt.executeUpdate(sentenciaTablaArticulosPedidos);
                 System.out.println("Insertado pedido en tabla \"articulos_pedidos\"");
@@ -235,18 +236,18 @@ public class Principal {
                     + "(9876543210, 'Roberto', 'Gutiérrez', 'Gran Vía de les Corts Catalanes, 666, Barcelona', '622111000')";
 
             String sentenciaTablaArticulos = "INSERT INTO articulos VALUES "
-                    + "('12345', 'Portátil HP Envy', 'Electrónica', '2023-01-15'), "
-                    + "('123456', 'Silla de Oficina Ergonómica', 'Muebles', '2023-02-22'), "
-                    + "('123457', 'Cien años de soledad', 'Libros', '2023-03-10'), "
-                    + "('234567', 'Cámara Digital Canon EOS', 'Electrónica', '2023-04-05'), "
-                    + "('234568', 'Mesa de Comedor extensible', 'Muebles', '2023-05-20'), "
-                    + "('345678', 'Camiseta de algodón', 'Ropa', '2023-06-12'), "
-                    + "('456789', 'Aspiradora robot Samsung', 'Electrodomésticos', '2023-07-25'), "
-                    + "('567890', 'Set de juguetes educativos para niños', 'Juguetes', '2023-08-30'), "
-                    + "('678901', 'Raqueta de tenis profesional', 'Deportes', '2023-09-18'), "
-                    + "('789012', 'Juego de ollas antiadherentes', 'Hogar', '2023-10-04'), "
-                    + "('890123', 'Collar de plata con diamantes', 'Joyas', '2023-11-15'), "
-                    + "('901234', 'Smartphone Samsung Galaxy', 'Electrónica', '2023-12-22')";
+                    + "(012345, 'Portátil HP Envy', 'Electrónica', '2023-01-15', 45), "
+                    + "(123456, 'Silla de Oficina Ergonómica', 'Muebles', '2023-02-22', 12), "
+                    + "(123457, 'Cien años de soledad', 'Libros', '2023-03-10', 78), "
+                    + "(234567, 'Cámara Digital Canon EOS', 'Electrónica', '2023-04-05', 32), "
+                    + "(234568, 'Mesa de Comedor extensible', 'Muebles', '2023-05-20', 89), "
+                    + "(345678, 'Camiseta de algodón', 'Ropa', '2023-06-12', 5), "
+                    + "(456789, 'Aspiradora robot Samsung', 'Electrodomésticos', '2023-07-25', 67), "
+                    + "(567890, 'Set de juguetes educativos para niños', 'Juguetes', '2023-08-30', 21), "
+                    + "(678901, 'Raqueta de tenis profesional', 'Deportes', '2023-09-18', 56), "
+                    + "(789012, 'Juego de ollas antiadherentes', 'Hogar', '2023-10-04', 90), "
+                    + "(890123, 'Collar de plata con diamantes', 'Joyas', '2023-11-15', 3), "
+                    + "(901234, 'Smartphone Samsung Galaxy', 'Electrónica', '2023-12-22', 68)";
 
             stmt.executeUpdate(sentenciaTablaClientes);
             stmt.executeUpdate(sentenciaTablaArticulos);
@@ -262,7 +263,7 @@ public class Principal {
 
     private static boolean clienteExiste() {
 		if (listaClientes.contains(idCliente)) {
-			System.out.println("Cliente " + idCliente + " encontrado. Continuando proceso...");
+			System.out.println("Cliente " + idCliente + " encontrado");
 			return true;
 		}
 		System.out.println("Cliente " + idCliente + " no existe. Omitiendo pedido...");
@@ -271,7 +272,7 @@ public class Principal {
     
     private static String comprobarPedidoDuplicado() {
 
-    	opc = "";
+    	String opc = "";
     	
     	if (listaPedidos.contains(idPedido)) {
         	
@@ -303,7 +304,7 @@ public class Principal {
     		
         } else {
         	
-        	System.out.println("El pedido " + idPedido + " no está repetido. Continuando ejecución...");
+        	System.out.println("El pedido " + idPedido + " no está repetido");
         	
         }
     	
@@ -313,11 +314,59 @@ public class Principal {
     
     private static boolean articuloExiste() {
 		if (listaArticulos.contains(idArticulo)) {
-			System.out.println("Artículo " + idArticulo + " encontrado. Continuando proceso...");
+			System.out.println("Artículo " + idArticulo + " encontrado");
 			return true;
 		}
 		System.out.println("Artículo " + idArticulo + " no existe. Omitiendo artículo...");
 		return false;
+	}
+    
+    private static boolean hayStock() throws NumberFormatException, SQLException, ClassNotFoundException {
+    	
+		conectarBBDD();
+
+		stockArticulo = 0;
+
+		String sentenciaStockArticulo = String.format("SELECT stock FROM articulos WHERE id_articulo = %s", 
+				idArticulo);
+
+		ResultSet rsStockArticulo = stmt.executeQuery(sentenciaStockArticulo);
+
+		if (rsStockArticulo.next()) {
+
+			stockArticulo = Integer.parseInt(rsStockArticulo.getString(1));
+			System.out.println("Queda/n " + stockArticulo + " ud/s.");
+
+		}
+
+		stmt.close();
+
+		if ((stockArticulo - cantidadPedida) < 0) {
+
+			System.out.println("No hay suficiente stock del artículo " + idArticulo + " para el pedido " + idPedido + ". Stock: " + stockArticulo + ". Solicitado/s: " + cantidadPedida);
+			return false;
+
+		} else {
+			
+			System.out.println("Hay stock del artículo " + idArticulo + " para el pedido " + idPedido + ". Stock: " + stockArticulo + ". Solicitado/s: " + cantidadPedida);
+			restarStock();
+			return true;
+			
+		}
+	}
+    
+	private static void restarStock() throws NumberFormatException, SQLException, ClassNotFoundException {
+	    	
+		conectarBBDD();
+
+		String sentenciaRestarStock = String.format("UPDATE articulos SET stock = %d WHERE id_articulo = %s", 
+				(stockArticulo - cantidadPedida), idArticulo);
+
+		stmt.executeUpdate(sentenciaRestarStock);
+
+		stmt.close();
+
+		System.out.println("Se ha restado el stock del artículo " + idArticulo);
 	}
 
     private static void leerBBDD() throws ClassNotFoundException, SQLException {
@@ -357,7 +406,7 @@ public class Principal {
 		
     	conectarBBDD();
     	
-    	String numArticulos = "";
+    	Integer numArticulos = 0;
     	
     	String sentenciaArticulosPedidos = String.format("SELECT COUNT(id_articulo) FROM articulos_pedidos WHERE id_pedido = %s",
                 idPedido);
@@ -366,14 +415,14 @@ public class Principal {
     	
     	if (rsArticulosPedidos.next()) {
     		
-    		numArticulos = rsArticulosPedidos.getString(1);
+    		numArticulos = Integer.parseInt(rsArticulosPedidos.getString(1));
     		System.out.println("Artículos en el pedido: " + numArticulos);
     		
     	}
     	
     	stmt.close();
     	
-    	if (numArticulos.equals("0")) {
+    	if (numArticulos <= 0) {
     		
     		System.out.println("El pedido " + idPedido + " no contiene artículos o no son válidos. Eliminando...");
     		eliminarPedido(idPedido, true);
