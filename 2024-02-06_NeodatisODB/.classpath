@@ -6,6 +6,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="lib" path="C:/Users/Carlos/Downloads/neodatis-odb-1.9.30.689/neodatis-odb-1.9.30-689/neodatis-odb-1.9.30.689.jar"/>
+	<classpathentry kind="lib" path="C:/Users/Carlos/git/ad/neodatis-odb-1.9.30.689.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

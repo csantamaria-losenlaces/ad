@@ -299,7 +299,7 @@ public class Principal {
                     + "(890123, 'Collar de plata con diamantes', 'Joyas', '2023-11-15', 3), "
                     + "(901234, 'Smartphone Samsung Galaxy', 'Electrónica', '2023-12-22', 68)";
 
-            // Ejecuta las sentencias de inserción de clientes y artículos
+            // Ejecución de las sentencias de inserción de clientes y artículos
             stmt.executeUpdate(sentenciaTablaClientes);
             stmt.executeUpdate(sentenciaTablaArticulos);
 
@@ -314,7 +314,7 @@ public class Principal {
     // Método que comprueba si el cliente leído existe (lo busca en el ArrayList "listaClientes"). Devuelve "true" si es así
     private static boolean clienteExiste() {
     	
-		// Comprueba si "idCliente" (cliente actualmente leyéndose durante la ejecución) se encuentra en el ArrayList "listaClientes"
+		// Comprobación de si "idCliente" (cliente actualmente leyéndose durante la ejecución) se encuentra en el ArrayList "listaClientes"
     	if (listaClientes.contains(idCliente)) {
 			System.out.println("Cliente " + idCliente + " encontrado");
 			return true;
@@ -325,15 +325,18 @@ public class Principal {
 		
 	}
     
+    // Método que comprueba y gestiona la posible duplicidad del pedido actualmente iterándose
     private static String comprobarPedidoDuplicado() {
 
     	String opc = "";
     	
+    	// Comprobación de si el pedido está en "listaPedidos", es decir, si ya existía
     	if (listaPedidos.contains(idPedido)) {
         	
     		System.out.println("El pedido " + idPedido + " está duplicado. ¿Deseas omitirlo o sustituirlo?\n[O] Omitir\n[S] Sustituir");
     		opc = teclado.nextLine();    		
     		
+    		// Bucle que se repite hasta que la opción introducida es válida
     		while (!opc.equalsIgnoreCase("O") && !opc.equalsIgnoreCase("S")) {
     			
                 System.out.println("La opción introducida no es correcta. Por favor, elige una de las siguientes:\n[O] Omitir\n[S] Sustituir");
@@ -341,9 +344,11 @@ public class Principal {
                 
             }
     		
+    		// Comprobación de si el usuario ha elegido sustituir el pedido
     		if (opc.equalsIgnoreCase("S")) {
     			try {
-    				eliminarPedido(idPedido, false);
+    				// Lanzamiento del método eliminarPedido() que borra las tuplas asociadas tanto en la tabla "pedidos" como "articulos_pedidos"
+    				eliminarPedido(false);
     				System.out.println("Eliminando datos del anterior pedido...");
 				} catch (ClassNotFoundException | SQLException e) {
 					System.out.println("No se ha podido eliminar el pedido " + idPedido);
@@ -353,13 +358,16 @@ public class Principal {
         	System.out.println("El pedido " + idPedido + " no está repetido");
         }
     	
+    	// Devuelve la opción seleccionada por el usuario para continuar con la lógica dentro del método principal
     	return opc;
     	
     }
     
+    // Método que chequea si el artículo existe. Si es así, devuelve "true" para manejar el resto el flujo en el método que ha llamado a este
     private static boolean articuloExiste() {
     	
-		if (listaArticulos.contains(idArticulo)) {
+		// Se asegura de que el artículo esté en el ArrayList "listaArticulos"
+    	if (listaArticulos.contains(idArticulo)) {
 			System.out.println("Artículo " + idArticulo + " encontrado");
 			return true;
 		}
@@ -369,114 +377,152 @@ public class Principal {
 		
 	}
     
+    // Método que verifica si hay stock de "idArticulo"
     private static boolean hayStock() throws NumberFormatException, SQLException, ClassNotFoundException {
     	
-		conectarBBDD();
+    	// Conexión a la BB.DD
+    	conectarBBDD();
 
-		stockArticulo = 0;
+		// Establece la variable "stockArticulo" a 0
+    	stockArticulo = 0;
 
-		String sentenciaStockArticulo = String.format("SELECT stock FROM articulos WHERE id_articulo = %s", 
+		// Declaración de la cadena que recuperará la columna "stock" de la tabla "articulos" para un "idArticulo" concreto
+    	String sentenciaStockArticulo = String.format("SELECT stock FROM articulos WHERE id_articulo = %s", 
 				idArticulo);
 
-		ResultSet rsStockArticulo = stmt.executeQuery(sentenciaStockArticulo);
+		// Ejecución de la consulta de selección
+    	ResultSet rsStockArticulo = stmt.executeQuery(sentenciaStockArticulo);
 
-		if (rsStockArticulo.next()) {
-			stockArticulo = Integer.parseInt(rsStockArticulo.getString(1));
+		// Recuperación de los datos del ResultSet
+    	if (rsStockArticulo.next()) {
+			// Obtiene el resultado en primera posición del ResultSet
+    		stockArticulo = Integer.parseInt(rsStockArticulo.getString(1));
 			System.out.println("Queda/n " + stockArticulo + " ud/s.");
 		}
 
+		// Cierre del recurso de tipo "Statement"
 		stmt.close();
 
+		// Comprobación de stock suficiente para satisfacer la cantidad solicitada. Devuelve "true" si se puede servir
 		if ((stockArticulo - cantidadPedida) < 0) {
 			System.out.println("No hay suficiente stock del artículo " + idArticulo + " para el pedido " + idPedido + ". Stock: " + stockArticulo + ". Solicitado/s: " + cantidadPedida);
 			return false;
 		} else {
 			System.out.println("Hay stock del artículo " + idArticulo + " para el pedido " + idPedido + ". Stock: " + stockArticulo + ". Solicitado/s: " + cantidadPedida);
+			// Lanza el método restarStock() para actualizar las existencias del artículo
 			restarStock();
 			return true;
 		}
 	}
     
-	private static void restarStock() throws NumberFormatException, SQLException, ClassNotFoundException {
+	// Método que actualiza las unidades de la tabla "articulos" del producto del XML que se esté recorriendo
+    private static void restarStock() throws NumberFormatException, SQLException, ClassNotFoundException {
 	    	
+		// Conexión a la BB.DD
 		conectarBBDD();
 
+		// Declaración de la instrucción de actualización de la tabla "articulos"
 		String sentenciaRestarStock = String.format("UPDATE articulos SET stock = %d WHERE id_articulo = %s", 
 				(stockArticulo - cantidadPedida), idArticulo);
 
+		// Ejecución del Statement de actualización
 		stmt.executeUpdate(sentenciaRestarStock);
 
+		// Cierre del recurso de tipo "Statement"
 		stmt.close();
 
 		System.out.println("Se ha restado el stock del artículo " + idArticulo);
 		
 	}
 
+    // Método que añade a diferentes ArrayList los pedidos, clientes y artículos existentes en la BB.DD.
     private static void leerBBDD() throws ClassNotFoundException, SQLException {
 
-        conectarBBDD();
+    	// Conexión a la BB.DD
+    	conectarBBDD();
 
-        ResultSet rsPedidos = stmt.executeQuery("SELECT id_pedido FROM pedidos");
+        // Guardado de todos los valores "id_pedido" en la tabla "pedidos"
+    	ResultSet rsPedidos = stmt.executeQuery("SELECT id_pedido FROM pedidos");
         while (rsPedidos.next()) listaPedidos.add(rsPedidos.getString("id_pedido"));
 
+        // Guardado de todos los valores "id_cliente" en la tabla "clientes"
         ResultSet rsClientes = stmt.executeQuery("SELECT id_cliente FROM clientes");
         while (rsClientes.next()) listaClientes.add(rsClientes.getString("id_cliente"));
         
+        // Guardado de todos los valores "id_articulo" en la tabla "articulos"
         ResultSet rsArticulos = stmt.executeQuery("SELECT id_articulo FROM articulos");
         while (rsArticulos.next()) listaArticulos.add(rsArticulos.getString("id_articulo"));
 
+        // Cierre del recurso de tipo "Statement"
         stmt.close();
 
     }
 
-    private static void eliminarPedido(String idPedido, Boolean soloTablaPedidos) throws ClassNotFoundException, SQLException {
+    // Método que elimina el pedido "idPedido" de la tabla "pedidos" y también "articulos_pedidos" si recibe "false" por parámetro
+    private static void eliminarPedido(Boolean soloTablaPedidos) throws ClassNotFoundException, SQLException {
 
-        conectarBBDD();
+    	// Conexión a la BB.DD
+    	conectarBBDD();
 
-        String sentenciaTablaArticulosPedidos = String.format("DELETE FROM articulos_pedidos WHERE id_pedido = %s",
+    	// Declaración de las sentencias de eliminación para ambas tablas
+    	String sentenciaTablaPedidos = String.format("DELETE FROM pedidos WHERE id_pedido = %s",
                 idPedido);
-        String sentenciaTablaPedidos = String.format("DELETE FROM pedidos WHERE id_pedido = %s",
+    	String sentenciaTablaArticulosPedidos = String.format("DELETE FROM articulos_pedidos WHERE id_pedido = %s",
                 idPedido);
 
-        stmt.executeUpdate(sentenciaTablaPedidos);
+        // Ejecución de la instrucción de eliminación de la tabla "pedidos"
+    	stmt.executeUpdate(sentenciaTablaPedidos);
         
-        if (!soloTablaPedidos) stmt.executeUpdate(sentenciaTablaArticulosPedidos);
+        // Si el valor recibido por parámetro es "false" también se ejecuta la instrucción de eliminación de la tabla "articulos_pedidos"
+    	if (!soloTablaPedidos) stmt.executeUpdate(sentenciaTablaArticulosPedidos);
 
+        // Cierre del recurso de tipo "Statement"
         stmt.close();
 
     }
     
+    // Método que comprueba si, dado un idPedido de la tabla "pedidos", tiene al menos una tupla asociada en la tabla "articulos_pedidos"
     private static void comprobarPedidoVacio() throws SQLException, ClassNotFoundException {
 		
+    	// Conexión a la BB.DD
     	conectarBBDD();
     	
+    	// Declaración e inicialización de la variable "numArticulos" a 0
     	Integer numArticulos = 0;
     	
+    	// Declaración e inicliazación de la sentencia que cuenta las filas de la tabla articulos_pedidos dado un "idPedido" concreto
     	String sentenciaArticulosPedidos = String.format("SELECT COUNT(id_articulo) FROM articulos_pedidos WHERE id_pedido = %s",
                 idPedido);
     	
+    	// Almacenamiento en un ResultSet del resultado de la consulta
     	ResultSet rsArticulosPedidos = stmt.executeQuery(sentenciaArticulosPedidos);
     	
+    	// Comprobación de si el ResultSet tiene al menos un resultado almacenado
     	if (rsArticulosPedidos.next()) {
-    		
+    		// Obtiene el resultado en primera posición del ResultSet
     		numArticulos = Integer.parseInt(rsArticulosPedidos.getString(1));
     		System.out.println("Artículos en el pedido: " + numArticulos);
-    		
     	}
     	
+    	// Cierre del recurso de tipo "Statement"
     	stmt.close();
     	
+    	// Condición que verifica si "numArticulos" es menor o igual a 0
     	if (numArticulos <= 0) {
     		System.out.println("El pedido " + idPedido + " no contiene artículos o no son válidos. Eliminando...");
-    		eliminarPedido(idPedido, true);
+    		// Se elimina el pedido de la tabla "pedidos"
+    		eliminarPedido(true);
     		System.out.println("El pedido " + idPedido + " ha sido eliminado por estar vacío");
     	}
     	
 	}
     
+    // Método que mueve un fichero al directorio "procesados"
     private static void moverFicheroXML() {
     	
+    	// Declaración de objeto File que contiene la ruta actual del fichero XML procesándose
     	File f = new File(rutaXML);
+    	// Ejecución del método renameTo() que mueve el fichero dentro de la carpeta "procesados"
     	f.renameTo(new File("procesados/" + f.getName()));
     	System.out.println("El fichero " + f.getName() + " se ha terminado de procesar. El programa ha finalizado");
     	
