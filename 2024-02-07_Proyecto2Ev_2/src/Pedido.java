@@ -36,5 +36,12 @@ public class Pedido {
 	public void setFechaPedido(String fechaPedido) {
 		this.fechaPedido = fechaPedido;
 	}
+
+	@Override
+	public String toString() {
+		return "Pedido [idPedido=" + idPedido + ", idCliente=" + idCliente + ", fechaPedido=" + fechaPedido + "]";
+	}
+	
+	
 	
 }

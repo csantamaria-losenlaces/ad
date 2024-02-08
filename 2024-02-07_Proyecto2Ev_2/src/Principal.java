@@ -12,9 +12,9 @@ public class Principal {
 	private static ArrayList<Pedido> listaPedidos = new ArrayList<>();
 	private static ArrayList<LineaPedido> listaLineasPedidos = new ArrayList<>();
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		
-		
+		leerBBDD();
 
 	}
 	
@@ -42,9 +42,31 @@ public class Principal {
     	// Conexión a la BB.DD
     	conectarBBDD();
 
-        // Guardado de todos los valores "id_pedido" en la tabla "pedidos"
-    	ResultSet rsPedidos = stmt.executeQuery("SELECT id_pedido FROM pedidos");
-        //while (rsPedidos.next()) listaPedidos.add(rsPedidos.getString("id_pedido"));
+        ResultSet rsPedidos = stmt.executeQuery("SELECT * FROM pedidos");
+        while (rsPedidos.next()) {
+        	int idPedido = rsPedidos.getInt("id_pedido");
+        	int idCliente = rsPedidos.getInt("id_cliente");
+        	String fechaPedido = rsPedidos.getString("fecha_pedido");
+        	listaPedidos.add(new Pedido(idPedido, idCliente, fechaPedido));
+        }
+        
+        ResultSet rsArticulosPedidos = stmt.executeQuery("SELECT * FROM articulos_pedidos");
+        while (rsArticulosPedidos.next()) {
+        	int idPedido = rsArticulosPedidos.getInt("id_pedido");
+        	int idArticulo = rsArticulosPedidos.getInt("id_articulo");
+        	float cantidadPedida = rsArticulosPedidos.getFloat("cantidad_pedida");
+        	listaLineasPedidos.add(new LineaPedido(idPedido, idArticulo, cantidadPedida));
+        }
+        
+        System.out.println("\nPedidos:");
+        for (Pedido p : listaPedidos) {
+			System.out.println(p.toString());
+		}
+        
+        System.out.println("Líneas de pedido:");
+        for (LineaPedido lp : listaLineasPedidos) {
+			System.out.println(lp.toString());
+		}
 
         // Cierre del recurso de tipo "Statement"
         stmt.close();
