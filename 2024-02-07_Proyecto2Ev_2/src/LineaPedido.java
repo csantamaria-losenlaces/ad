@@ -36,5 +36,13 @@ public class LineaPedido {
 	public void setCantidadPedida(float cantidadPedida) {
 		this.cantidadPedida = cantidadPedida;
 	}
+
+	@Override
+	public String toString() {
+		return "LineaPedido [idPedido=" + idPedido + ", idArticulo=" + idArticulo + ", cantidadPedida=" + cantidadPedida
+				+ "]";
+	}
+	
+	
 	
 }
