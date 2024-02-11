@@ -64,14 +64,14 @@ public class Principal {
 				// Obtención de la lista de nodos "pedido" en el documento XML
 				pedidos = d.getElementsByTagName("pedido");
 
-				// Creación la estructura de tablas y campos de la BB.DD., si todavía no existe
+				// Creación la estructura de tablas y campos de la B.D., si todavía no existe
 				crearTablas();
 
 				// Inserción de datos de muestra para las tablas de clientes y artículos (salta una excepción controlada si ya existen)
 				insertarClientesArticulos();
 
-				// Lectura de los pedidos, clientes y artículos existentes en la BB.DD. antes de procesar el XML
-				leerBBDD();
+				// Lectura de los pedidos, clientes y artículos existentes en la B.D. antes de procesar el XML
+				leerBD();
 
 				// Se recorre la lista de nodos "pedido"
 				for (int p = 0; p < pedidos.getLength(); p++) {
@@ -149,9 +149,10 @@ public class Principal {
 			appProps.load(new FileInputStream(new File("app.properties")));
 		} catch (FileNotFoundException e) {
 			System.out.println("No se ha encontrado el fichero de configuración");
+			return false;
 		} catch (IOException e) {
 			System.out.println("Ha ocurrido una excepción al leer el fichero de configuración");
-			e.printStackTrace();
+			return false;
 		}
 
 		// Obtención del valor de la ruta XML contenida en el fichero de configuración
@@ -182,12 +183,12 @@ public class Principal {
 
     }
 
-    // Método para realizar la conexión con la BB.DD.
-    private static void conectarBBDD() {
+    // Método para realizar la conexión con la B.D.
+    private static void conectarBD() {
 
         try {
-            // Declaración del objeto "Connection" que toma como argumento el URI de la BB.DD.
-        	Connection conn = DriverManager.getConnection("jdbc:sqlite:bbddpedidos.db");
+            // Declaración del objeto "Connection" que toma como argumento el URI de la B.D.
+        	Connection conn = DriverManager.getConnection("jdbc:sqlite:bdpedidos.db");
             // Carga la librería JDBC
         	Class.forName("org.sqlite.JDBC");
             // Crea el statement a partir del objeto "Connection"
@@ -223,8 +224,8 @@ public class Principal {
                 + "PRIMARY KEY (id_articulo)"
                 + ")";
 
-        // Conexión a la BB.DD.
-        conectarBBDD();
+        // Conexión a la B.D.
+        conectarBD();
 
         // Ejecución de las sentencias de creación de las tablas
         stmt.executeUpdate(CREA_TABLA_PEDIDOS);
@@ -240,8 +241,8 @@ public class Principal {
     // Método que inserta un pedido en la tabla "pedidos" o "articulos_pedidos" (definido por parámetro)
     private static void insertarPedido(String nombreTabla) throws ClassNotFoundException, SQLException {
 
-    	// Conexión a la BB.DD.
-    	conectarBBDD();
+    	// Conexión a la B.D.
+    	conectarBD();
 
         switch (nombreTabla) {
             case "pedidos":
@@ -273,8 +274,8 @@ public class Principal {
     private static void insertarClientesArticulos() {
 
         try {
-        	// Conexión a la BB.DD.
-        	conectarBBDD();
+        	// Conexión a la B.D.
+        	conectarBD();
 
             // Declaración de la sentencia para insertar clientes de muestra
         	String sentenciaTablaClientes = "INSERT INTO clientes VALUES "
@@ -286,18 +287,18 @@ public class Principal {
 
         	// Declaración de la sentencia para insertar artículos de muestra
             String sentenciaTablaArticulos = "INSERT INTO articulos VALUES "
-                    + "(012345, 'Portátil HP Envy', 'Electrónica', '2023-01-15', 45), "
-                    + "(123456, 'Silla de Oficina Ergonómica', 'Muebles', '2023-02-22', 12), "
-                    + "(123457, 'Cien años de soledad', 'Libros', '2023-03-10', 78), "
-                    + "(234567, 'Cámara Digital Canon EOS', 'Electrónica', '2023-04-05', 32), "
-                    + "(234568, 'Mesa de Comedor extensible', 'Muebles', '2023-05-20', 89), "
-                    + "(345678, 'Camiseta de algodón', 'Ropa', '2023-06-12', 5), "
-                    + "(456789, 'Aspiradora robot Samsung', 'Electrodomésticos', '2023-07-25', 67), "
-                    + "(567890, 'Set de juguetes educativos para niños', 'Juguetes', '2023-08-30', 21), "
-                    + "(678901, 'Raqueta de tenis profesional', 'Deportes', '2023-09-18', 56), "
-                    + "(789012, 'Juego de ollas antiadherentes', 'Hogar', '2023-10-04', 90), "
-                    + "(890123, 'Collar de plata con diamantes', 'Joyas', '2023-11-15', 3), "
-                    + "(901234, 'Smartphone Samsung Galaxy', 'Electrónica', '2023-12-22', 68)";
+                    + "(012345, 'Portátil HP Envy', 'Electrónica', '2023-01-15', 9999), "
+                    + "(123456, 'Silla de Oficina Ergonómica', 'Muebles', '2023-02-22', 9999), "
+                    + "(123457, 'Cien años de soledad', 'Libros', '2023-03-10', 9999), "
+                    + "(234567, 'Cámara Digital Canon EOS', 'Electrónica', '2023-04-05', 9999), "
+                    + "(234568, 'Mesa de Comedor extensible', 'Muebles', '2023-05-20', 9999), "
+                    + "(345678, 'Camiseta de algodón', 'Ropa', '2023-06-12', 9999), "
+                    + "(456789, 'Aspiradora robot Samsung', 'Electrodomésticos', '2023-07-25', 9999), "
+                    + "(567890, 'Set de juguetes educativos para niños', 'Juguetes', '2023-08-30', 9999), "
+                    + "(678901, 'Raqueta de tenis profesional', 'Deportes', '2023-09-18', 9999), "
+                    + "(789012, 'Juego de ollas antiadherentes', 'Hogar', '2023-10-04', 9999), "
+                    + "(890123, 'Collar de plata con diamantes', 'Joyas', '2023-11-15', 9999), "
+                    + "(901234, 'Smartphone Samsung Galaxy', 'Electrónica', '2023-12-22', 9999)";
 
             // Ejecución de las sentencias de inserción de clientes y artículos
             stmt.executeUpdate(sentenciaTablaClientes);
@@ -381,7 +382,7 @@ public class Principal {
     private static boolean hayStock() throws NumberFormatException, SQLException, ClassNotFoundException {
     	
     	// Conexión a la BB.DD
-    	conectarBBDD();
+    	conectarBD();
 
 		// Establece la variable "stockArticulo" a 0
     	stockArticulo = 0;
@@ -419,7 +420,7 @@ public class Principal {
     private static void restarStock() throws NumberFormatException, SQLException, ClassNotFoundException {
 	    	
 		// Conexión a la BB.DD
-		conectarBBDD();
+		conectarBD();
 
 		// Declaración de la instrucción de actualización de la tabla "articulos"
 		String sentenciaRestarStock = String.format("UPDATE articulos SET stock = %d WHERE id_articulo = %s", 
@@ -435,11 +436,11 @@ public class Principal {
 		
 	}
 
-    // Método que añade a diferentes ArrayList los pedidos, clientes y artículos existentes en la BB.DD.
-    private static void leerBBDD() throws ClassNotFoundException, SQLException {
+    // Método que añade a diferentes ArrayList los pedidos, clientes y artículos existentes en la B.D.
+    private static void leerBD() throws ClassNotFoundException, SQLException {
 
     	// Conexión a la BB.DD
-    	conectarBBDD();
+    	conectarBD();
 
         // Guardado de todos los valores "id_pedido" en la tabla "pedidos"
     	ResultSet rsPedidos = stmt.executeQuery("SELECT id_pedido FROM pedidos");
@@ -462,7 +463,7 @@ public class Principal {
     private static void eliminarPedido(Boolean soloTablaPedidos) throws ClassNotFoundException, SQLException {
 
     	// Conexión a la BB.DD
-    	conectarBBDD();
+    	conectarBD();
 
     	// Declaración de las sentencias de eliminación para ambas tablas
     	String sentenciaTablaPedidos = String.format("DELETE FROM pedidos WHERE id_pedido = %s",
@@ -485,7 +486,7 @@ public class Principal {
     private static void comprobarPedidoVacio() throws SQLException, ClassNotFoundException {
 		
     	// Conexión a la BB.DD
-    	conectarBBDD();
+    	conectarBD();
     	
     	// Declaración e inicialización de la variable "numArticulos" a 0
     	Integer numArticulos = 0;
