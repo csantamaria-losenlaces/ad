@@ -21,7 +21,8 @@ public class Principal {
 	private static ArrayList<Pedido> listaPedidos = new ArrayList<>();
 	private static ArrayList<LineaPedido> listaLineasPedidos = new ArrayList<>();
 	
-	private static TreeMap<Integer, Float> frecuenciaArticulos = new TreeMap<>();
+	private static TreeMap<Integer, Float> udsArticulosVendidos = new TreeMap<>();
+	private static TreeMap<Integer, Integer> frecArticulosVendidos = new TreeMap<>();
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		
@@ -33,7 +34,7 @@ public class Principal {
 		System.out.println("Hay " + contarObjetos("Pedido") + " pedido/s en la B.D.");
 		System.out.println("Hay " + contarObjetos("LineaPedido") + " línea/s de pedido/s en la B.D.");
 		
-		frecuenciaArticulos();
+		totalArticulosVendidos();
 
 	}
 	
@@ -137,7 +138,7 @@ public class Principal {
     }
     
     // Método que lista y contabiliza la frecuencia de los artículos
-    private static void frecuenciaArticulos() {
+    private static void totalArticulosVendidos() {
     	
     	conectarBD("ODB");
     	Objects<LineaPedido> lineasPedidos = odb.getObjects(LineaPedido.class);
@@ -148,24 +149,24 @@ public class Principal {
     		int idArticulo = lineaActual.getIdArticulo();
     		float cantPedida = lineaActual.getCantidadPedida();
     		
-    		if (frecuenciaArticulos.containsKey(idArticulo)) {
-    			
-    			frecuenciaArticulos.replace(idArticulo, frecuenciaArticulos.get(idArticulo) + cantPedida);
-    			
-    		} else {
-    			
-    			frecuenciaArticulos.put(idArticulo, cantPedida);
-    			
-    		}
+    		udsArticulosVendidos.compute(idArticulo, (clave, valAnterior) -> valAnterior == null ? cantPedida : valAnterior + cantPedida);
+    		
+    		frecArticulosVendidos.compute(idArticulo, (clave, valAnterior) -> valAnterior == null ? 1 : valAnterior + 1);
     		
     	}
     	
-    	frecuenciaArticulos.forEach((idArticulo, frecuenciaArticulo) -> {
-    	    System.out.println("Artículo: " + idArticulo + ". Cantidad vendida: " + Math.round(frecuenciaArticulo));
+    	udsArticulosVendidos.forEach((idArticulo, udsVendidas) -> {
+    	    System.out.println("Artículo: " + idArticulo + ". Unidades vendidas: " + Math.round(udsVendidas));
+    	});
+    	
+    	frecArticulosVendidos.forEach((idArticulo, frecuenciaArticulo) -> {
+    	    System.out.println("Artículo: " + idArticulo + ". Pedidos en los que se ha vendido: " + frecuenciaArticulo);
     	});
     	
     	odb.close();
     	
     }
+    
+    
 
 }
