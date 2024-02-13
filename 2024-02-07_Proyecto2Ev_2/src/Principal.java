@@ -8,34 +8,34 @@ import java.util.TreeMap;
 
 import org.neodatis.odb.ODB;
 import org.neodatis.odb.ODBFactory;
+import org.neodatis.odb.ObjectValues;
 import org.neodatis.odb.Objects;
+import org.neodatis.odb.core.query.IValuesQuery;
+import org.neodatis.odb.impl.core.query.values.ValuesCriteriaQuery;
+import org.neodatis.odb.Values;
 
 public class Principal {
 
-	// Declaración de variables globales
+	// Declaración de variables globales SQL
 	private static Connection conn;
 	private static Statement stmt;
 	
+	// Declaración de variables globales ODB
 	private static ODB odb;
 	
-	private static ArrayList<Pedido> listaPedidos = new ArrayList<>();
-	private static ArrayList<LineaPedido> listaLineasPedidos = new ArrayList<>();
-	
-	private static TreeMap<Integer, Float> udsArticulosVendidos = new TreeMap<>();
-	private static TreeMap<Integer, Integer> frecArticulosVendidos = new TreeMap<>();
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		
-		//leerBBDD();
+		insertarObjetos();
 		
-		//insertarObjetos(listaPedidos);
-		//insertarObjetos(listaLineasPedidos);
+		System.out.printf("Pedidos: %d%n", contarObjetos("Pedido"));
+		System.out.printf("Líneas de pedido: %d%n", contarObjetos("LineaPedido"));
 		
-		System.out.println("Hay " + contarObjetos("Pedido") + " pedido/s en la B.D.");
-		System.out.println("Hay " + contarObjetos("LineaPedido") + " línea/s de pedido/s en la B.D.");
+		recorrerLineasPedido();
+		recorrerPedidos();
 		
-		totalArticulosVendidos();
-
+		udsPorPedido();
+		
 	}
 	
 	// Método para realizar la conexión con la B.D.
@@ -57,11 +57,13 @@ public class Principal {
 			} catch (SQLException sql) {
 				System.out.println("Ha ocurrido una excepción SQL");
 			}
+			
 			break;
 			
 		case "ODB":
 			
 			odb = ODBFactory.open("pedidos.odb");
+			
 			break;
 			
 		}
@@ -69,10 +71,13 @@ public class Principal {
 	}
 	
 	// Método que añade a diferentes ArrayList los pedidos, clientes y artículos existentes en la B.D.
-    private static void leerBBDD() throws ClassNotFoundException, SQLException {
+    private static void insertarObjetos() throws SQLException {
 
     	// Conexión a la BB.DD
     	conectarBD("SQL");
+    	
+    	ArrayList<Pedido> listaPedidos = new ArrayList<>();
+    	ArrayList<LineaPedido> listaLineasPedidos = new ArrayList<>();
 
         ResultSet rsPedidos = stmt.executeQuery("SELECT * FROM pedidos");
         
@@ -92,30 +97,27 @@ public class Principal {
         	listaLineasPedidos.add(new LineaPedido(idPedido, idArticulo, cantidadPedida));
         }
         
-        // Cierre del recurso de tipo "Statement"
         stmt.close();
         conn.close();
+        
+        conectarBD("ODB");
+        
+        for (Pedido p : listaPedidos) {
+			odb.store(p);
+		}
+        
+        for (LineaPedido lp : listaLineasPedidos) {
+			odb.store(lp);
+		}
+        
+		odb.close();
+        
+        System.out.println("Se han terminado de insertar los objetos en la base de datos");
 
     }
     
-    // Método que recibe un ArrayList de objetos por parámetro y lo inserta en la B.D.
-    private static void insertarObjetos(ArrayList<?> listaObjetos) {
-    	
-    	conectarBD("ODB");
-    	
-    	for (Object o : listaObjetos) {
-			
-    		odb.store(o);
-    		
-		}
-    	
-    	odb.close();
-    	System.out.println("Se han terminado de insertar los objetos en la base de datos");
-    	
-    }
-    
     // Método que recibe por parámetro un tipo de objeto y devuelve la cantidad encontrada en la B.D.
-    private static int contarObjetos(String tipoObjeto) {
+    private static int contarObjetos(String tipoObjeto) throws SQLException {
     	
         conectarBD("ODB");
         Objects<?> objetos;
@@ -133,14 +135,19 @@ public class Principal {
         	return objetos.size();
         }
         
+        odb.close();
         return -1;
         
     }
     
-    // Método que lista y contabiliza la frecuencia de los artículos
-    private static void totalArticulosVendidos() {
+    // Método recorre las líneas de pedido y muestra las uds. totales vendidas de cada artículo y el núm. de pedidos en los que aparece
+    private static void recorrerLineasPedido() throws SQLException {
     	
     	conectarBD("ODB");
+    	
+    	TreeMap<Integer, Float> udsArticulosVendidos = new TreeMap<>();
+    	TreeMap<Integer, Integer> frecArticulosVendidos = new TreeMap<>();
+    	
     	Objects<LineaPedido> lineasPedidos = odb.getObjects(LineaPedido.class);
     	
     	while (lineasPedidos.hasNext()) {
@@ -156,17 +163,77 @@ public class Principal {
     	}
     	
     	udsArticulosVendidos.forEach((idArticulo, udsVendidas) -> {
-    	    System.out.println("Artículo: " + idArticulo + ". Unidades vendidas: " + Math.round(udsVendidas));
+    	    System.out.printf("Uds. vendidas del artículo %d: %.0f%n", idArticulo, udsVendidas);
     	});
     	
     	frecArticulosVendidos.forEach((idArticulo, frecuenciaArticulo) -> {
-    	    System.out.println("Artículo: " + idArticulo + ". Pedidos en los que se ha vendido: " + frecuenciaArticulo);
+    	    System.out.printf("Pedidos donde aparece artículo %d: %d%n", idArticulo, frecuenciaArticulo);
     	});
     	
     	odb.close();
     	
     }
     
+    // Método que recorre los pedidos
+    private static void recorrerPedidos() {
+    	
+    	conectarBD("ODB");
+    	
+    	TreeMap<Integer, Integer> ventasPorCliente = new TreeMap<>();
+    	
+    	Objects<Pedido> pedidos = odb.getObjects(Pedido.class);
+    	
+    	while (pedidos.hasNext()) {
+    		
+    		Pedido pedidoActual = pedidos.next();
+    		int idCliente = pedidoActual.getIdCliente();
+    		
+    		ventasPorCliente.compute(idCliente, (clave, valAnterior) -> valAnterior == null ? 1 : valAnterior + 1);
+    		
+    	}
+    	
+    	ventasPorCliente.forEach((idCliente, cantidadPedidos) -> {
+    	    System.out.printf("Pedidos del cliente %d: %d%n", idCliente, cantidadPedidos);
+    	});
+    	
+    	odb.close();
+    	
+    }
     
+    // Método que muestra el listado de unidades pedidas por pedido
+    private static void udsPorPedido() {
+    	
+    	conectarBD("ODB");
+    	
+    	IValuesQuery consulta = new ValuesCriteriaQuery(LineaPedido.class).field("idPedido").sum("cantidadPedida").groupBy("idPedido");
+    	Values valores = odb.getValues(consulta);
+    	
+    	while (valores.hasNext()) {
+    		
+    		ObjectValues objetos = (ObjectValues) valores.next();
+    		System.out.printf("Uds. compradas en el pedido %d: %.0f%n", objetos.getByAlias("idPedido"), objetos.getByAlias("cantidadPedida"));
+    		
+    	}
+    	
+    }
+    
+    // Método que muestra el la media de artículos por pedido
+    private static void mediaArticulos() {
+    	
+    	/*conectarBD("ODB");
+    	
+    	IValuesQuery consulta = new ValuesCriteriaQuery(LineaPedido.class).field("idPedido").sum("cantidadPedida").groupBy("idPedido");
+    	Values valores = odb.getValues(consulta);
+    	
+    	while (valores.hasNext()) {
+    		
+    		ObjectValues objetos = (ObjectValues) valores.next();
+    		System.out.printf("Uds. compradas en el pedido %d: %.0f%n", objetos.getByAlias("idPedido"), objetos.getByAlias("cantidadPedida"));
+    		
+    	}*/
+    	
+    	// TODO
+    	
+    }
 
 }
