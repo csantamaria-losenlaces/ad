@@ -1,3 +1,4 @@
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -26,15 +27,16 @@ public class Principal {
 	
 	public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		
-		insertarObjetos();
+		// insertarObjetos();
 		
-		System.out.printf("Pedidos: %d%n", contarObjetos("Pedido"));
-		System.out.printf("Líneas de pedido: %d%n", contarObjetos("LineaPedido"));
+		contarObjetos();
 		
 		recorrerLineasPedido();
 		recorrerPedidos();
 		
 		udsPorPedido();
+		
+		mediaArticulos();
 		
 	}
 	
@@ -117,26 +119,17 @@ public class Principal {
     }
     
     // Método que recibe por parámetro un tipo de objeto y devuelve la cantidad encontrada en la B.D.
-    private static int contarObjetos(String tipoObjeto) throws SQLException {
+    private static void contarObjetos() throws SQLException {
     	
         conectarBD("ODB");
-        Objects<?> objetos;
         
-        switch (tipoObjeto) {
-        
-        case "Pedido":
-        	objetos = odb.getObjects(Pedido.class);
-        	odb.close();
-        	return objetos.size();
-        	
-        case "LineaPedido":
-        	objetos = odb.getObjects(LineaPedido.class);
-        	odb.close();
-        	return objetos.size();
-        }
-        
-        odb.close();
-        return -1;
+        Objects<Pedido> objetosPedido = odb.getObjects(Pedido.class);
+    	System.out.printf("Pedidos: %d%n", objetosPedido.size());
+    	
+    	Objects<LineaPedido> objetosLineaPedido = odb.getObjects(LineaPedido.class);
+    	System.out.printf("Líneas de pedido: %d%n", objetosLineaPedido.size());
+    	
+    	odb.close();
         
     }
     
@@ -215,24 +208,25 @@ public class Principal {
     		
     	}
     	
+    	odb.close();
+    	
     }
     
     // Método que muestra el la media de artículos por pedido
     private static void mediaArticulos() {
     	
-    	/*conectarBD("ODB");
+    	conectarBD("ODB");
     	
-    	IValuesQuery consulta = new ValuesCriteriaQuery(LineaPedido.class).field("idPedido").sum("cantidadPedida").groupBy("idPedido");
-    	Values valores = odb.getValues(consulta);
+    	IValuesQuery consultaTotalUdsVendidas = new ValuesCriteriaQuery(LineaPedido.class).sum("cantidadPedida");
+    	Values valoresTotalUdsVendidas = odb.getValues(consultaTotalUdsVendidas);
+    	ObjectValues objetoTotalUdsVendidas = valoresTotalUdsVendidas.nextValues();
+    	BigDecimal valorTotalUdsVendidas = (BigDecimal) objetoTotalUdsVendidas.getByAlias("cantidadPedida");
     	
-    	while (valores.hasNext()) {
-    		
-    		ObjectValues objetos = (ObjectValues) valores.next();
-    		System.out.printf("Uds. compradas en el pedido %d: %.0f%n", objetos.getByAlias("idPedido"), objetos.getByAlias("cantidadPedida"));
-    		
-    	}*/
+    	// IValuesQuery consulta
     	
-    	// TODO
+		System.out.printf("Artículos vendidos: %.2f%n", valorTotalUdsVendidas.floatValue());
+		
+		odb.close();
     	
     }
 

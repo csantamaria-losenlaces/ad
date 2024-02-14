@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -25,8 +27,8 @@ public class Principal {
 
     // Declaración de variables globales
     private static Scanner teclado = new Scanner(System.in);
-
-    private static ArrayList<String> listaPedidos = new ArrayList<>();
+	
+	private static ArrayList<String> listaPedidos = new ArrayList<>();
     private static ArrayList<String> listaClientes = new ArrayList<>();
     private static ArrayList<String> listaArticulos = new ArrayList<>();
 
@@ -37,16 +39,71 @@ public class Principal {
     private static String idCliente, idPedido, fechaPedido, idArticulo;
     private static Integer stockArticulo, cantidadPedida;
 
-	public static void main(String[] args) {
+	// Método principal que se ejecutará al lanzar la aplicación
+    public static void main(String[] args) throws ClassNotFoundException, SQLException {
 		
-	// Declaración de variables del método principal 
-	DocumentBuilderFactory dbf;
-    DocumentBuilder db;
-    Document d;
-    NodeList pedidos;
-    NodeList articulos;
+		menuPrincipal();
+	
+	}
+	
+	// Método que muestra un menú con opciones para lanzar los diferentes métodos de la aplicación
+	private static void menuPrincipal() throws ClassNotFoundException, SQLException {
+		
+		String opcMenu = "";
+		
+		while (!opcMenu.equals("0")) {
+			
+			opcMenu = "";
+			
+			System.out.println("Por favor, elige una opción del menú:\n"
+					+ "[1] Crear tablas (ejecutar solo una vez)\n"
+					+ "[2] Insertar datos de muestra (ejecutar solo una vez)\n"
+					+ "[3] Procesar XML de pedidos\n"
+					+ "[0] SALIR");
+			
+			opcMenu = teclado.nextLine();
+			
+			switch (opcMenu) {
+			
+			// Creación la estructura de tablas y campos de la B.D., si todavía no existe
+			case "1":
+				crearTablas();
+				break;
+			// Inserción de datos de muestra para las tablas de clientes y artículos (salta una excepción controlada si ya existen)
+			case "2":				
+				insertarClientesArticulos();
+				break;
+			// Lanza el método de mayor relevancia del programa que procesa el fichero XML y lo inserta en la B.D.
+			case "3":
+				procesarXML();
+				break;
+			case "0":
+				System.out.println("La ejecución del programa ha finalizado");
+				break;
+			default:
+				System.out.println("Opción introducida inválida");
+			}
+			
+		}
+		
+		teclado.close();
+		
+	}
+	
+	// Método que procesa un fichero XML y lo inserta en una base de datos
+	private static void procesarXML() {
+		
+		// Declaración de variables 
+		DocumentBuilderFactory dbf;
+	    DocumentBuilder db;
+	    
+	    Document d;
+	    
+	    NodeList pedidos;
+	    NodeList articulos;
 
 		try {
+			// Comprueba que el archivo de configuración existe y es válido
 			if (cargarConfiguracion()) {
 
 				// Configuración del analizador de documentos XML
@@ -63,12 +120,6 @@ public class Principal {
 
 				// Obtención de la lista de nodos "pedido" en el documento XML
 				pedidos = d.getElementsByTagName("pedido");
-
-				// Creación la estructura de tablas y campos de la B.D., si todavía no existe
-				crearTablas();
-
-				// Inserción de datos de muestra para las tablas de clientes y artículos (salta una excepción controlada si ya existen)
-				insertarClientesArticulos();
 
 				// Lectura de los pedidos, clientes y artículos existentes en la B.D. antes de procesar el XML
 				leerBD();
@@ -136,6 +187,7 @@ public class Principal {
 		catch (Exception e) {
 			e.printStackTrace();
 		}
+		
 	}
 
 	// Método para cargar archivo de configuración y definir ruta del XML de origen que devuelve "true" si se ejecuta con éxito
@@ -164,7 +216,7 @@ public class Principal {
 			return false;
 		} else {
 			rutaXML = propiedadRuta;
-			System.out.println("Ruta XML leída: " + rutaXML);
+			System.out.println("Ruta especificada: " + rutaXML);
 			return true;
 		}
 
@@ -204,7 +256,8 @@ public class Principal {
     // Método que crea todas las tablas, si todavía no existen 
     private static void crearTablas() throws SQLException, ClassNotFoundException {
 
-        final String CREA_TABLA_PEDIDOS = "CREATE TABLE IF NOT EXISTS pedidos ("
+        // Declaración de variables globales que contienen sentencias SQL
+    	final String CREA_TABLA_PEDIDOS = "CREATE TABLE IF NOT EXISTS pedidos ("
                 + "id_pedido INTEGER, id_cliente INTEGER, fecha_pedido TEXT, "
                 + "PRIMARY KEY (id_pedido)"
                 + ")";
@@ -235,6 +288,8 @@ public class Principal {
 
         // Cierre del recurso de tipo "Statement"
         stmt.close();
+        
+        System.out.println("Las tablas se han creado correctamente. Por favor, no volver a ejecutar este método");
 
     }
 
@@ -310,6 +365,8 @@ public class Principal {
             System.out.println("Error al introducir clientes y artículos de muestra. Es posible que ya existieran");
         }
         
+        System.out.println("Se han insertado datos de muestra. Por favor, no volver a ejecutar este método");
+        
     }
 
     // Método que comprueba si el cliente leído existe (lo busca en el ArrayList "listaClientes"). Devuelve "true" si es así
@@ -329,24 +386,24 @@ public class Principal {
     // Método que comprueba y gestiona la posible duplicidad del pedido actualmente iterándose
     private static String comprobarPedidoDuplicado() {
 
-    	String opc = "";
+    	String opcPedidoDuplicado = "";
     	
     	// Comprobación de si el pedido está en "listaPedidos", es decir, si ya existía
     	if (listaPedidos.contains(idPedido)) {
         	
     		System.out.println("El pedido " + idPedido + " está duplicado. ¿Deseas omitirlo o sustituirlo?\n[O] Omitir\n[S] Sustituir");
-    		opc = teclado.nextLine();    		
+    		opcPedidoDuplicado = teclado.nextLine();
     		
     		// Bucle que se repite hasta que la opción introducida es válida
-    		while (!opc.equalsIgnoreCase("O") && !opc.equalsIgnoreCase("S")) {
+    		while (!opcPedidoDuplicado.equalsIgnoreCase("O") && !opcPedidoDuplicado.equalsIgnoreCase("S")) {
     			
                 System.out.println("La opción introducida no es correcta. Por favor, elige una de las siguientes:\n[O] Omitir\n[S] Sustituir");
-                opc = teclado.nextLine();
+                opcPedidoDuplicado = teclado.nextLine();
                 
             }
     		
     		// Comprobación de si el usuario ha elegido sustituir el pedido
-    		if (opc.equalsIgnoreCase("S")) {
+    		if (opcPedidoDuplicado.equalsIgnoreCase("S")) {
     			try {
     				// Lanzamiento del método eliminarPedido() que borra las tuplas asociadas tanto en la tabla "pedidos" como "articulos_pedidos"
     				eliminarPedido(false);
@@ -360,7 +417,7 @@ public class Principal {
         }
     	
     	// Devuelve la opción seleccionada por el usuario para continuar con la lógica dentro del método principal
-    	return opc;
+    	return opcPedidoDuplicado;
     	
     }
     
@@ -519,10 +576,14 @@ public class Principal {
 	}
     
     // Método que mueve un fichero al directorio "procesados"
-    private static void moverFicheroXML() {
+    private static void moverFicheroXML() throws IOException {
     	
     	// Declaración de objeto File que contiene la ruta actual del fichero XML procesándose
     	File f = new File(rutaXML);
+    	
+    	// Crea el directorio "procesados" si no existe
+    	Files.createDirectories(Paths.get("procesados/"));
+    	
     	// Ejecución del método renameTo() que mueve el fichero dentro de la carpeta "procesados"
     	f.renameTo(new File("procesados/" + f.getName()));
     	System.out.println("El fichero " + f.getName() + " se ha terminado de procesar. El programa ha finalizado");
