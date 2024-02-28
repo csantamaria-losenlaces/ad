@@ -3,7 +3,6 @@ package examenprueba;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -18,7 +17,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.neodatis.odb.ODB;
 import org.neodatis.odb.ODBFactory;
 import org.neodatis.odb.ObjectValues;
-import org.neodatis.odb.Objects;
 import org.neodatis.odb.Values;
 import org.neodatis.odb.core.query.IValuesQuery;
 import org.neodatis.odb.impl.core.query.values.ValuesCriteriaQuery;
@@ -37,12 +35,18 @@ public class Principal {
 	
 	// Método principal que se ejecuta al lanzar el programa
 	public static void main(String[] args) {
+
+		procesarXML();
 		
-		// procesarXML();
-		// unidadesVendidas();
-		// ventasPorColores();
-		// productoMasVendido();
+		unidadesVendidasODB();
+		ventasPorColoresODB();
+		productoMasVendidoODB();
+		
 		neodatisASqlite();
+		
+		unidadesVendidasSQL();
+		ventasPorColoresSQL();
+		productoMasVendidoSQL();
 		
 	}
 
@@ -127,7 +131,7 @@ public class Principal {
     }
     
     // Método para calcular el total de unidades vendidas (ODB)
-    private static void unidadesVendidas() {
+    private static void unidadesVendidasODB() {
     	
     	// Declaración de variables 
     	ODB odb = ODBFactory.open(RUTA_ODB);
@@ -141,7 +145,7 @@ public class Principal {
     		// Se obtienen los valores del objeto de respuesta
     		ObjectValues ov = (ObjectValues) vUdsVendidas.next();
     		// Se imprime por consola el resultado
-    		System.out.println("Unidades vendidas en total: " + ov.getByIndex(0));
+    		System.out.println("Unidades vendidas en total (ODB): " + ov.getByIndex(0));
     	}
     	
     	// Cierra la conexión con la base de datos de objetos
@@ -149,8 +153,38 @@ public class Principal {
     	
     }
     
+	// Método para calcular el total de unidades vendidas (SQL)
+	private static void unidadesVendidasSQL() {
+
+		// Conexión a la B.D.
+		Statement stmt = conectarBD();
+
+		// Declaración de variables globales que contienen sentencias SQL
+		final String UNIDADES_VENDIDAS = "SELECT SUM(cantidad) FROM ventas";
+
+		try {
+			
+			ResultSet rsUnidadesVendidas = stmt.executeQuery(UNIDADES_VENDIDAS);
+			
+			while (rsUnidadesVendidas.next()) {
+				
+				System.out.println("Unidades vendidas en total (SQL): " + rsUnidadesVendidas.getString(1));
+				
+			}
+			
+			// Cierre del recurso de tipo "Statement"
+			stmt.close();
+			
+		} catch (SQLException e) {
+			
+			e.printStackTrace();
+			
+		}
+
+	}
+    
     // Método para calcular el total de unidades vendidas por cada color (ODB)
-	private static void ventasPorColores() {
+	private static void ventasPorColoresODB() {
 		
 		// Declaración de variables 
 		ODB odb = ODBFactory.open(RUTA_ODB);
@@ -167,7 +201,7 @@ public class Principal {
 			ObjectValues ov = (ObjectValues) vVentasPorColores.next();
 			
 			// Se imprime por consola el resultado
-			System.out.println("Ventas del color " + ov.getByIndex(0) + ": " + ov.getByIndex(1));
+			System.out.println("Ventas del color " + ov.getByIndex(0) + ": " + ov.getByIndex(1) + " (ODB)");
 		}
 		
 		// Cierra la conexión con la base de datos de objetos
@@ -175,8 +209,39 @@ public class Principal {
 		
 	}
 	
+	// Método para calcular el total de unidades vendidas por cada color (SQL)
+	private static void ventasPorColoresSQL() {
+
+		// Conexión a la B.D.
+		Statement stmt = conectarBD();
+
+		// Declaración de variables globales que contienen sentencias SQL
+		final String VENTAS_POR_COLORES = "SELECT color, SUM(cantidad) FROM ventas GROUP BY color";
+
+		try {
+			
+			ResultSet rsUnidadesVendidas = stmt.executeQuery(VENTAS_POR_COLORES);
+			
+			while (rsUnidadesVendidas.next()) {
+				
+				// Se imprime por consola el resultado
+				System.out.println("Ventas del color " + rsUnidadesVendidas.getString(1) + ": " + rsUnidadesVendidas.getString(2) + " (SQL)");
+				
+			}
+			
+			// Cierre del recurso de tipo "Statement"
+			stmt.close();
+			
+		} catch (SQLException e) {
+			
+			e.printStackTrace();
+			
+		}
+
+	}
+	
 	// Método para calcular el producto más vendido (ODB)
-	private static void productoMasVendido() {
+	private static void productoMasVendidoODB() {
 		
 		// Declaración de variables 
 		ODB odb = ODBFactory.open(RUTA_ODB);
@@ -197,19 +262,47 @@ public class Principal {
 			BigDecimal sumaUdsVendidas = (BigDecimal) ov.getByIndex(1);
 			int sumaUdsVendidasInt = sumaUdsVendidas.intValue();
 			
-			// Se imprime por consola el resultado
-			System.out.println("Producto: " + nombreArticulo + ". Ud/s vendida/s: " + sumaUdsVendidas);
-			
 			if (sumaUdsVendidasInt > udsProdMasVendido) {
 				nomProdMasVendido = nombreArticulo;
 				udsProdMasVendido = sumaUdsVendidasInt;
 			}
 		}
 		
-		System.out.println("Producto más vendido: " + nomProdMasVendido + ". Ud/s: " + udsProdMasVendido);
+		System.out.println("Producto más vendido: " + nomProdMasVendido + ". Ud/s: " + udsProdMasVendido + " (ODB)");
 		
 		// Cierra la conexión con la base de datos de objetos
 		odb.close();
+		
+	}
+	
+	// Método para calcular el producto más vendido (SQL)
+	private static void productoMasVendidoSQL() {
+		
+		// Conexión a la B.D.
+		Statement stmt = conectarBD();
+
+		// Declaración de variables globales que contienen sentencias SQL
+		final String PROD_MAS_VENDIDO = "SELECT producto, SUM(cantidad) AS cantidad_total FROM ventas GROUP BY producto ORDER BY cantidad_total DESC LIMIT 1";
+
+		try {
+			
+			ResultSet rsUnidadesVendidas = stmt.executeQuery(PROD_MAS_VENDIDO);
+			
+			if (rsUnidadesVendidas.next()) {
+				
+				// Se imprime por consola el resultado
+				System.out.println("Producto más vendido: " + rsUnidadesVendidas.getString(1) + ". Ud/s: " + rsUnidadesVendidas.getString(2) + " (SQL)");
+				
+			}
+			
+			// Cierre del recurso de tipo "Statement"
+			stmt.close();
+			
+		} catch (SQLException e) {
+			
+			e.printStackTrace();
+			
+		}
 		
 	}
 	
