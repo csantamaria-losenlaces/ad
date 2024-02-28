@@ -32,51 +32,55 @@ public class Principal {
 	private static final String RUTA_XML = "ventas.xml";
 	private static final String RUTA_ODB = "ventasODB.odb";
 	private static final String RUTA_SQL = "jdbc:sqlite:ventasSQL.db";
-	
+
 	// Método principal que se ejecuta al lanzar el programa
 	public static void main(String[] args) {
 
+		// Procesamiento del XML y almacenamiento en la ODB
 		procesarXML();
-		
+
+		// Llamada a métodos para realizar consultas en la ODB
 		unidadesVendidasODB();
 		ventasPorColoresODB();
 		productoMasVendidoODB();
-		
+
+		// Exportación de datos desde Neodatis a SQLite
 		neodatisASqlite();
-		
+
+		// Llamada a métodos para realizar consultas en SQLite
 		unidadesVendidasSQL();
 		ventasPorColoresSQL();
 		productoMasVendidoSQL();
-		
+
 	}
 
 	// Método que procesa el XML y lo inserta en la ODB
 	private static void procesarXML() {
-		
-		// Declaración de variables 
+
+		// Declaración de variables
 		ODB odb = ODBFactory.open(RUTA_ODB);
 		DocumentBuilderFactory dbf;
-	    DocumentBuilder db;
-	    Document d;
-	    NodeList ventas;
-	    ArrayList<Venta> listaVentas = new ArrayList<>();
-	    
-	    // Configuración del analizador de documentos XML
+		DocumentBuilder db;
+		Document d;
+		NodeList ventas;
+		ArrayList<Venta> listaVentas = new ArrayList<>();
+
+		// Configuración del analizador de documentos XML
 		dbf = DocumentBuilderFactory.newInstance();
 
 		try {
 			// Creación del analizador de documentos XML
 			db = dbf.newDocumentBuilder();
-			
+
 			// Parseo del archivo XML y creación del documento XML
 			d = db.parse(new File(RUTA_XML));
-			
+
 			// Normalización de la estructura del documento
 			d.getDocumentElement().normalize();
 
 			// Obtención de la lista de nodos "pedido" en el documento XML
 			ventas = d.getElementsByTagName("venta");
-			
+
 			// Se recorre la lista de nodos "pedido"
 			for (int v = 0; v < ventas.getLength(); v++) {
 
@@ -96,63 +100,65 @@ public class Principal {
 					String color = obtenerNodo("color", elementoVenta);
 					String precio = obtenerNodo("precio", elementoVenta);
 					String cantidad = obtenerNodo("cantidad", elementoVenta);
-					
+
 					// Agregación de un nuevo objeto Venta al ArrayList "listaVentas"
-					listaVentas.add(new Venta(fecha, producto, talla, color, Double.parseDouble(precio), Integer.parseInt(cantidad)));
-					
+					listaVentas.add(new Venta(fecha, producto, talla, color, Double.parseDouble(precio),
+							Integer.parseInt(cantidad)));
+
 					// Bucle que recorre el ArrayList "listaVentas" y agrega sus objetos a la ODB
 					for (Venta objetoVenta : listaVentas) {
 						odb.store(objetoVenta);
 					}
-					
+
 				}
-				
+
 			}
-			
+
 		} catch (ParserConfigurationException | SAXException | IOException e) {
 			e.printStackTrace();
 		}
-		
+
 		odb.close();
-		
+
 	}
-	
-	// Método para obtener el valor de un nodo dado su nombre de etiqueta y el elemento padre
-    private static String obtenerNodo(String etiqueta, Element e) {
 
-        // Obtención de la lista de nodos con el nombre de la etiqueta
-        NodeList nodos = e.getElementsByTagName(etiqueta).item(0).getChildNodes();
+	// Método para obtener el valor de un nodo dado su nombre de etiqueta y el
+	// elemento padre
+	private static String obtenerNodo(String etiqueta, Element e) {
 
-        // Obtención del primer nodo hijo y devolución de su valor como un String
-        Node nodo = nodos.item(0);
-        
-        return nodo.getNodeValue();
+		// Obtención de la lista de nodos con el nombre de la etiqueta
+		NodeList nodos = e.getElementsByTagName(etiqueta).item(0).getChildNodes();
 
-    }
-    
-    // Método para calcular el total de unidades vendidas (ODB)
-    private static void unidadesVendidasODB() {
-    	
-    	// Declaración de variables 
-    	ODB odb = ODBFactory.open(RUTA_ODB);
-    	
-    	// Objeto que contiene la consulta ODB
-    	IValuesQuery ivqUdsVendidas = new ValuesCriteriaQuery(Venta.class).sum("cantidad");
-    	// Objeto que contiene el resultado de la consulta
-    	Values vUdsVendidas = odb.getValues(ivqUdsVendidas);
-    	
-    	if (vUdsVendidas.hasNext()) {
-    		// Se obtienen los valores del objeto de respuesta
-    		ObjectValues ov = (ObjectValues) vUdsVendidas.next();
-    		// Se imprime por consola el resultado
-    		System.out.println("Unidades vendidas en total (ODB): " + ov.getByIndex(0));
-    	}
-    	
-    	// Cierra la conexión con la base de datos de objetos
-    	odb.close();
-    	
-    }
-    
+		// Obtención del primer nodo hijo y devolución de su valor como un String
+		Node nodo = nodos.item(0);
+
+		return nodo.getNodeValue();
+
+	}
+
+	// Método para calcular el total de unidades vendidas (ODB)
+	private static void unidadesVendidasODB() {
+
+		// Declaración de variables
+		ODB odb = ODBFactory.open(RUTA_ODB);
+
+		// Objeto que contiene la consulta ODB
+		IValuesQuery ivqUdsVendidas = new ValuesCriteriaQuery(Venta.class).sum("cantidad");
+		// Objeto que contiene el resultado de la consulta
+		Values vUdsVendidas = odb.getValues(ivqUdsVendidas);
+
+		if (vUdsVendidas.hasNext()) {
+			// Se obtienen los valores del objeto de respuesta
+			ObjectValues ov = (ObjectValues) vUdsVendidas.next();
+			// Se imprime por consola el resultado
+			System.out.println("Unidades vendidas en total (ODB): " + ov.getByIndex(0));
+		}
+
+		// Cierra la conexión con la base de datos de objetos
+		odb.close();
+
+	}
+
 	// Método para calcular el total de unidades vendidas (SQL)
 	private static void unidadesVendidasSQL() {
 
@@ -163,52 +169,55 @@ public class Principal {
 		final String UNIDADES_VENDIDAS = "SELECT SUM(cantidad) FROM ventas";
 
 		try {
-			
+
 			ResultSet rsUnidadesVendidas = stmt.executeQuery(UNIDADES_VENDIDAS);
-			
+
 			while (rsUnidadesVendidas.next()) {
-				
+
 				System.out.println("Unidades vendidas en total (SQL): " + rsUnidadesVendidas.getString(1));
-				
+
 			}
-			
+
 			// Cierre del recurso de tipo "Statement"
 			stmt.close();
-			
+
 		} catch (SQLException e) {
-			
+
 			e.printStackTrace();
-			
+
 		}
 
 	}
-    
-    // Método para calcular el total de unidades vendidas por cada color (ODB)
+
+	// Método para calcular el total de unidades vendidas por cada color (ODB)
 	private static void ventasPorColoresODB() {
-		
-		// Declaración de variables 
-		ODB odb = ODBFactory.open(RUTA_ODB);
-		
+
+		// Declaración de variables
+		ODB odb = ODBFactory.open
+
+		(RUTA_ODB);
+
 		// Objeto que contiene la consulta ODB
-		IValuesQuery ivqVentasPorColores = new ValuesCriteriaQuery(Venta.class).field("color").sum("cantidad").groupBy("color");
-		
+		IValuesQuery ivqVentasPorColores = new ValuesCriteriaQuery(Venta.class).field("color").sum("cantidad")
+				.groupBy("color");
+
 		// Objeto que contiene el resultado de la consulta
 		Values vVentasPorColores = odb.getValues(ivqVentasPorColores);
-		
+
 		while (vVentasPorColores.hasNext()) {
-			
+
 			// Se obtienen los valores del objeto de respuesta
 			ObjectValues ov = (ObjectValues) vVentasPorColores.next();
-			
+
 			// Se imprime por consola el resultado
 			System.out.println("Ventas del color " + ov.getByIndex(0) + ": " + ov.getByIndex(1) + " (ODB)");
 		}
-		
+
 		// Cierra la conexión con la base de datos de objetos
 		odb.close();
-		
+
 	}
-	
+
 	// Método para calcular el total de unidades vendidas por cada color (SQL)
 	private static void ventasPorColoresSQL() {
 
@@ -219,65 +228,67 @@ public class Principal {
 		final String VENTAS_POR_COLORES = "SELECT color, SUM(cantidad) FROM ventas GROUP BY color";
 
 		try {
-			
+
 			ResultSet rsUnidadesVendidas = stmt.executeQuery(VENTAS_POR_COLORES);
-			
+
 			while (rsUnidadesVendidas.next()) {
-				
+
 				// Se imprime por consola el resultado
-				System.out.println("Ventas del color " + rsUnidadesVendidas.getString(1) + ": " + rsUnidadesVendidas.getString(2) + " (SQL)");
-				
+				System.out.println("Ventas del color " + rsUnidadesVendidas.getString(1) + ": "
+						+ rsUnidadesVendidas.getString(2) + " (SQL)");
+
 			}
-			
+
 			// Cierre del recurso de tipo "Statement"
 			stmt.close();
-			
+
 		} catch (SQLException e) {
-			
+
 			e.printStackTrace();
-			
+
 		}
 
 	}
-	
+
 	// Método para calcular el producto más vendido (ODB)
 	private static void productoMasVendidoODB() {
-		
-		// Declaración de variables 
+
+		// Declaración de variables
 		ODB odb = ODBFactory.open(RUTA_ODB);
 		String nomProdMasVendido = "";
 		int udsProdMasVendido = 0;
-		
+
 		// Objeto que contiene la consulta ODB
-		IValuesQuery ivqProductoMasVendido = new ValuesCriteriaQuery(Venta.class).field("producto").sum("cantidad").groupBy("producto");
+		IValuesQuery ivqProductoMasVendido = new ValuesCriteriaQuery(Venta.class).field("producto").sum("cantidad")
+				.groupBy("producto");
 		ivqProductoMasVendido.max("cantidad");
 		// Objeto que contiene el resultado de la consulta
 		Values vProductoMasVendido = odb.getValues(ivqProductoMasVendido);
-		
+
 		while (vProductoMasVendido.hasNext()) {
 			// Se obtienen los valores del objeto de respuesta
 			ObjectValues ov = (ObjectValues) vProductoMasVendido.next();
-			
+
 			String nombreArticulo = (String) ov.getByIndex(0);
 			BigDecimal sumaUdsVendidas = (BigDecimal) ov.getByIndex(1);
 			int sumaUdsVendidasInt = sumaUdsVendidas.intValue();
-			
+
 			if (sumaUdsVendidasInt > udsProdMasVendido) {
 				nomProdMasVendido = nombreArticulo;
 				udsProdMasVendido = sumaUdsVendidasInt;
 			}
 		}
-		
+
 		System.out.println("Producto más vendido: " + nomProdMasVendido + ". Ud/s: " + udsProdMasVendido + " (ODB)");
-		
+
 		// Cierra la conexión con la base de datos de objetos
 		odb.close();
-		
+
 	}
-	
+
 	// Método para calcular el producto más vendido (SQL)
 	private static void productoMasVendidoSQL() {
-		
+
 		// Conexión a la B.D.
 		Statement stmt = conectarBD();
 
@@ -285,27 +296,28 @@ public class Principal {
 		final String PROD_MAS_VENDIDO = "SELECT producto, SUM(cantidad) AS cantidad_total FROM ventas GROUP BY producto ORDER BY cantidad_total DESC LIMIT 1";
 
 		try {
-			
+
 			ResultSet rsUnidadesVendidas = stmt.executeQuery(PROD_MAS_VENDIDO);
-			
+
 			if (rsUnidadesVendidas.next()) {
-				
+
 				// Se imprime por consola el resultado
-				System.out.println("Producto más vendido: " + rsUnidadesVendidas.getString(1) + ". Ud/s: " + rsUnidadesVendidas.getString(2) + " (SQL)");
-				
+				System.out.println("Producto más vendido: " + rsUnidadesVendidas.getString(1) + ". Ud/s: "
+						+ rsUnidadesVendidas.getString(2) + " (SQL)");
+
 			}
-			
+
 			// Cierre del recurso de tipo "Statement"
 			stmt.close();
-			
+
 		} catch (SQLException e) {
-			
+
 			e.printStackTrace();
-			
+
 		}
-		
+
 	}
-	
+
 	private static ArrayList<Venta> exportarNeodatis() {
 
 		// Declaración de variables
@@ -313,8 +325,8 @@ public class Principal {
 		ArrayList<Venta> listaVentas = new ArrayList<>();
 
 		// Objeto que contiene la consulta ODB
-		IValuesQuery ivqVentasPorColores = new ValuesCriteriaQuery(Venta.class).field("fecha").field("producto").field("talla")
-				.field("color").field("precio").field("cantidad");
+		IValuesQuery ivqVentasPorColores = new ValuesCriteriaQuery(Venta.class).field("fecha").field("producto")
+				.field("talla").field("color").field("precio").field("cantidad");
 
 		// Objeto que contiene el resultado de la consulta
 		Values vVentasPorColores = odb.getValues(ivqVentasPorColores);
@@ -330,89 +342,88 @@ public class Principal {
 			Double precio = (Double) ov.getByIndex(4);
 			Integer cantidad = (Integer) ov.getByIndex(5);
 
-			listaVentas.add(new Venta(fecha, producto, talla, color, precio, cantidad));	
-			
+			listaVentas.add(new Venta(fecha, producto, talla, color, precio, cantidad));
+
 		}
-		
+
 		// Cierra la conexión con la base de datos de objetos
 		odb.close();
-		
+
 		return listaVentas;
 
 	}
-	
+
 	private static void neodatisASqlite() {
-		
+
 		// Declaración de variables
 		ArrayList<Venta> listaObjetosVenta = new ArrayList<>();
 		listaObjetosVenta = exportarNeodatis();
-		
+
 		crearTablas();
-		
+
 		try {
 			// Conexión a la B.D.
 			Statement stmt = conectarBD();
 
 			for (Venta v : listaObjetosVenta) {
-				
-				String sentenciaTablaVentas = String.format("INSERT INTO ventas VALUES ('%s', '%s', '%s', '%s', '%s', '%s')",
-						v.getFecha(), v.getProducto(), v.getTalla(), v.getColor(), v.getPrecio(), v.getCantidad());
-				
+
+				String sentenciaTablaVentas = String.format(
+						"INSERT INTO ventas VALUES ('%s', '%s', '%s', '%s', '%s', '%s')", v.getFecha(), v.getProducto(),
+						v.getTalla(), v.getColor(), v.getPrecio(), v.getCantidad());
+
 				stmt.executeUpdate(sentenciaTablaVentas);
-				
+
 			}
 
 			// Cierre del recurso de tipo "Statement"
 			stmt.close();
-			
+
 		} catch (SQLException sql) {
-			
+
 			sql.printStackTrace();
-			
+
 		}
 
 	}
-	
+
 	private static void crearTablas() {
 
 		// Conexión a la B.D.
 		Statement stmt = conectarBD();
-		
-        // Declaración de variables globales que contienen sentencias SQL
-    	final String CREAR_TABLA_VENTAS = "CREATE TABLE IF NOT EXISTS ventas ("
-                + "fecha TEXT, producto TEXT, talla TEXT, "
-                + "color TEXT, precio REAL, cantidad INTEGER"
-                + ")";
 
-        try {
-        	// Ejecución de la sentencia de creación de la tablas
-        	stmt.executeUpdate(CREAR_TABLA_VENTAS);
-	        // Cierre del recurso de tipo "Statement"
-	        stmt.close();
+		// Declaración de variables globales que contienen sentencias SQL
+		final String CREAR_TABLA_VENTAS = "CREATE TABLE IF NOT EXISTS ventas ("
+				+ "fecha TEXT, producto TEXT, talla TEXT, " + "color TEXT, precio REAL, cantidad INTEGER" + ")";
+
+		try {
+			// Ejecución de la sentencia de creación de la tablas
+			stmt.executeUpdate(CREAR_TABLA_VENTAS);
+			// Cierre del recurso de tipo "Statement"
+			stmt.close();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 
-    }
-	
-	// Método para realizar la conexión con la B.D.
-    private static Statement conectarBD() {
+	}
 
-        try {
-            // Declaración del objeto "Connection" que toma como argumento el URI de la B.D.
-        	Connection conn = DriverManager.getConnection(RUTA_SQL);
-            // Carga la librería JDBC
-        	Class.forName("org.sqlite.JDBC");
-            // Crea el statement a partir del objeto "Connection"
-        	return conn.createStatement();
-        } catch (ClassNotFoundException cnf) {
-            System.out.println("Ha ocurrido un error al cargar la clase");
-        } catch (SQLException sql) {
-            System.out.println("Ha ocurrido una excepción SQL");
-        }
-        
-        return null;
-        
-    }
+	// Método para realizar la conexión con la B.D.
+	private static Statement conectarBD() {
+
+		try {
+			// Declaración del objeto "Connection" que toma como argumento el URI de la B.D.
+			Connection conn = DriverManager.getConnection(RUTA_SQL);
+			// Carga la librería JDBC
+			Class.forName("org.sqlite.JDBC");
+			// Crea el statement a partir del objeto "Connection"
+			return conn.createStatement();
+		} catch (ClassNotFoundException cnf) {
+			System.out.println("Ha ocurrido un error al cargar la clase");
+		} catch (SQLException sql) {
+			System.out.println("Ha ocurrido una excepción SQL");
+		}
+
+		return null;
+
+	}
 
 }
